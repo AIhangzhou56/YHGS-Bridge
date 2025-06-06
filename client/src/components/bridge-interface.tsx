@@ -10,12 +10,15 @@ import { useWallet } from "@/hooks/use-wallet";
 import { apiRequest } from "@/lib/queryClient";
 import { ArrowUpDown, Shield, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { SUPPORTED_CHAINS } from "@/types/crypto";
+import type { Chain } from "@/types/chains";
+import { crossChainBridge } from "@/lib/bridge-contracts";
 
 const CHAINS = [
   { id: "ethereum", name: "Ethereum", symbol: "ETH", icon: "Ξ" },
   { id: "polygon", name: "Polygon", symbol: "MATIC", icon: "🔷" },
-  { id: "bsc", name: "BNB Smart Chain", symbol: "BNB", icon: "🟡" }
+  { id: "bsc", name: "BNB Smart Chain", symbol: "BNB", icon: "🟡" },
+  { id: "solana", name: "Solana", symbol: "SOL", icon: "◎" },
+  { id: "bitcoin", name: "Bitcoin", symbol: "BTC", icon: "₿" }
 ];
 
 export function BridgeInterface() {
@@ -23,12 +26,12 @@ export function BridgeInterface() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
-  const [fromChain, setFromChain] = useState("ethereum");
-  const [toChain, setToChain] = useState("polygon");
-  const [fromToken, setFromToken] = useState("ETH");
-  const [toToken, setToToken] = useState("WETH");
+  const [fromChain, setFromChain] = useState<Chain>("ethereum");
+  const [toChain, setToChain] = useState<Chain>("solana");
+  const [token, setToken] = useState("ETH");
   const [amount, setAmount] = useState("");
   const [estimatedReceived, setEstimatedReceived] = useState("");
+  const [bridgeStatus, setBridgeStatus] = useState<"idle" | "locking" | "minting" | "completed">("idle");
 
   const { data: bridgeRatesData } = useQuery({
     queryKey: ["/api/bridge/rates"]
@@ -39,6 +42,8 @@ export function BridgeInterface() {
   });
 
   const bridgeRate = bridgeRatesData?.rates?.find(
+    (rate: any) => rate.fromChain === fromChain && rate.toChain === toChain
+  ) || bridgeRatesData?.find?.(
     (rate: any) => rate.fromChain === fromChain && rate.toChain === toChain
   );
 
@@ -106,8 +111,8 @@ export function BridgeInterface() {
     bridgeMutation.mutate({
       walletId: 1, // Mock wallet ID
       type: "bridge",
-      fromToken,
-      toToken,
+      fromToken: token,
+      toToken: token,
       fromChain,
       toChain,
       amount
@@ -119,9 +124,11 @@ export function BridgeInterface() {
     return chain?.icon || "🔗";
   };
 
+  const tokens = tokensData?.tokens || tokensData || [];
+  
   const getTokenPrice = (symbol: string) => {
-    const token = tokensData?.tokens?.find((t: any) => t.symbol === symbol);
-    return token ? parseFloat(token.price) : 0;
+    const foundToken = tokens.find((t: any) => t.symbol === symbol);
+    return foundToken ? parseFloat(foundToken.price) : 0;
   };
 
   const formatUsdValue = (amount: string, symbol: string) => {

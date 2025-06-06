@@ -19,7 +19,7 @@ import {
   type InsertBridgeRate
 } from "@shared/schema";
 import { db } from "./db";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -367,7 +367,7 @@ export class DatabaseStorage implements IStorage {
     const [existingBalance] = await db
       .select()
       .from(balances)
-      .where(eq(balances.walletId, walletId) && eq(balances.tokenId, tokenId));
+      .where(and(eq(balances.walletId, walletId), eq(balances.tokenId, tokenId)));
 
     if (existingBalance) {
       await db
@@ -412,8 +412,7 @@ export class DatabaseStorage implements IStorage {
     const [rate] = await db
       .select()
       .from(bridgeRates)
-      .where(eq(bridgeRates.fromChain, fromChain))
-      .where(eq(bridgeRates.toChain, toChain));
+      .where(and(eq(bridgeRates.fromChain, fromChain), eq(bridgeRates.toChain, toChain)));
     return rate || undefined;
   }
 
