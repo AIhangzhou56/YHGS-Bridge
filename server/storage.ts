@@ -18,6 +18,8 @@ import {
   type BridgeRate,
   type InsertBridgeRate
 } from "@shared/schema";
+import { db } from "./db";
+import { eq } from "drizzle-orm";
 
 export interface IStorage {
   // User operations
@@ -283,4 +285,141 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+export class DatabaseStorage implements IStorage {
+  async getUser(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  async getWallet(id: number): Promise<Wallet | undefined> {
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.id, id));
+    return wallet || undefined;
+  }
+
+  async getWalletByAddress(address: string): Promise<Wallet | undefined> {
+    const [wallet] = await db.select().from(wallets).where(eq(wallets.address, address));
+    return wallet || undefined;
+  }
+
+  async createWallet(insertWallet: InsertWallet): Promise<Wallet> {
+    const [wallet] = await db
+      .insert(wallets)
+      .values(insertWallet)
+      .returning();
+    return wallet;
+  }
+
+  async updateWalletConnection(id: number, isConnected: boolean): Promise<void> {
+    await db
+      .update(wallets)
+      .set({ isConnected })
+      .where(eq(wallets.id, id));
+  }
+
+  async getAllTokens(): Promise<Token[]> {
+    return await db.select().from(tokens);
+  }
+
+  async getToken(id: number): Promise<Token | undefined> {
+    const [token] = await db.select().from(tokens).where(eq(tokens.id, id));
+    return token || undefined;
+  }
+
+  async getTokenBySymbol(symbol: string): Promise<Token | undefined> {
+    const [token] = await db.select().from(tokens).where(eq(tokens.symbol, symbol));
+    return token || undefined;
+  }
+
+  async updateTokenPrice(id: number, price: string, change24h: string): Promise<void> {
+    await db
+      .update(tokens)
+      .set({ price, change24h })
+      .where(eq(tokens.id, id));
+  }
+
+  async getWalletBalances(walletId: number): Promise<(Balance & { token: Token })[]> {
+    const result = await db
+      .select()
+      .from(balances)
+      .leftJoin(tokens, eq(balances.tokenId, tokens.id))
+      .where(eq(balances.walletId, walletId));
+
+    return result.map(row => ({
+      ...row.balances,
+      token: row.tokens!
+    }));
+  }
+
+  async updateBalance(walletId: number, tokenId: number, amount: string): Promise<void> {
+    const [existingBalance] = await db
+      .select()
+      .from(balances)
+      .where(eq(balances.walletId, walletId) && eq(balances.tokenId, tokenId));
+
+    if (existingBalance) {
+      await db
+        .update(balances)
+        .set({ amount })
+        .where(eq(balances.id, existingBalance.id));
+    } else {
+      await db
+        .insert(balances)
+        .values({ walletId, tokenId, amount });
+    }
+  }
+
+  async getWalletTransactions(walletId: number): Promise<Transaction[]> {
+    return await db
+      .select()
+      .from(transactions)
+      .where(eq(transactions.walletId, walletId))
+      .orderBy(transactions.createdAt);
+  }
+
+  async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
+    const [transaction] = await db
+      .insert(transactions)
+      .values(insertTransaction)
+      .returning();
+    return transaction;
+  }
+
+  async updateTransactionStatus(id: number, status: string, txHash?: string, receivedAmount?: string): Promise<void> {
+    await db
+      .update(transactions)
+      .set({ 
+        status, 
+        ...(txHash && { txHash }),
+        ...(receivedAmount && { receivedAmount })
+      })
+      .where(eq(transactions.id, id));
+  }
+
+  async getBridgeRate(fromChain: string, toChain: string): Promise<BridgeRate | undefined> {
+    const [rate] = await db
+      .select()
+      .from(bridgeRates)
+      .where(eq(bridgeRates.fromChain, fromChain))
+      .where(eq(bridgeRates.toChain, toChain));
+    return rate || undefined;
+  }
+
+  async getAllBridgeRates(): Promise<BridgeRate[]> {
+    return await db.select().from(bridgeRates);
+  }
+}
+
+export const storage = new DatabaseStorage();
