@@ -43,8 +43,12 @@ export const transactions = pgTable("transactions", {
   toChain: text("to_chain").notNull(),
   amount: decimal("amount", { precision: 18, scale: 8 }).notNull(),
   receivedAmount: decimal("received_amount", { precision: 18, scale: 8 }),
-  status: text("status").notNull(), // "pending", "completed", "failed"
+  status: text("status").notNull(), // "pending", "locked", "minting", "completed", "failed"
   txHash: text("tx_hash"),
+  sourceTxHash: text("source_tx_hash"), // For cross-chain verification
+  nonce: text("nonce"), // For preventing replay attacks
+  targetAddress: text("target_address"), // Destination address on target chain
+  lockContractAddress: text("lock_contract_address"), // Contract that locked tokens
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -76,6 +80,14 @@ export const insertBalanceSchema = createInsertSchema(balances).omit({
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  walletId: z.number().nullable().optional(),
+  receivedAmount: z.string().nullable().optional(),
+  txHash: z.string().nullable().optional(),
+  sourceTxHash: z.string().nullable().optional(),
+  nonce: z.string().nullable().optional(),
+  targetAddress: z.string().nullable().optional(),
+  lockContractAddress: z.string().nullable().optional(),
 });
 
 export const insertBridgeRateSchema = createInsertSchema(bridgeRates).omit({

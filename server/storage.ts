@@ -162,7 +162,12 @@ export class MemStorage implements IStorage {
 
   async createWallet(insertWallet: InsertWallet): Promise<Wallet> {
     const id = this.currentId++;
-    const wallet: Wallet = { ...insertWallet, id };
+    const wallet: Wallet = { 
+      ...insertWallet, 
+      id,
+      userId: insertWallet.userId || null,
+      isConnected: insertWallet.isConnected || false
+    };
     this.wallets.set(id, wallet);
 
     // Initialize mock balances for the new wallet
@@ -244,6 +249,13 @@ export class MemStorage implements IStorage {
     const transaction: Transaction = { 
       ...insertTransaction, 
       id, 
+      walletId: insertTransaction.walletId || null,
+      receivedAmount: insertTransaction.receivedAmount || null,
+      txHash: insertTransaction.txHash || null,
+      sourceTxHash: insertTransaction.sourceTxHash || null,
+      nonce: insertTransaction.nonce || null,
+      targetAddress: insertTransaction.targetAddress || null,
+      lockContractAddress: insertTransaction.lockContractAddress || null,
       createdAt: new Date()
     };
     this.transactions.set(id, transaction);
