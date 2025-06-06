@@ -41,9 +41,8 @@ export function BridgeInterface() {
     queryKey: ["/api/tokens"]
   });
 
-  const bridgeRate = bridgeRatesData?.rates?.find(
-    (rate: any) => rate.fromChain === fromChain && rate.toChain === toChain
-  ) || bridgeRatesData?.find?.(
+  const rates = bridgeRatesData?.rates || bridgeRatesData || [];
+  const bridgeRate = rates.find(
     (rate: any) => rate.fromChain === fromChain && rate.toChain === toChain
   );
 
@@ -166,7 +165,7 @@ export function BridgeInterface() {
                 <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-lg">
                   {getChainIcon(fromChain)}
                 </div>
-                <Select value={fromChain} onValueChange={setFromChain}>
+                <Select value={fromChain} onValueChange={(value) => setFromChain(value as Chain)}>
                   <SelectTrigger className="border-0 bg-transparent text-white font-medium p-0 h-auto">
                     <SelectValue />
                   </SelectTrigger>
@@ -180,7 +179,7 @@ export function BridgeInterface() {
                 </Select>
               </div>
               <span className="text-sm text-slate-400">
-                Balance: {getBalance(fromToken).toFixed(4)} {fromToken}
+                Balance: {getBalance(token).toFixed(4)} {token}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -195,13 +194,13 @@ export function BridgeInterface() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => setAmount(getBalance(fromToken).toString())}
+                  onClick={() => setAmount(getBalance(token).toString())}
                   className="bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30"
                 >
                   MAX
                 </Button>
                 <span className="text-sm text-slate-400">
-                  {formatUsdValue(amount, fromToken)}
+                  {formatUsdValue(amount, token)}
                 </span>
               </div>
             </div>
@@ -229,7 +228,7 @@ export function BridgeInterface() {
                 <div className="w-8 h-8 bg-slate-700 rounded-full flex items-center justify-center text-lg">
                   {getChainIcon(toChain)}
                 </div>
-                <Select value={toChain} onValueChange={setToChain}>
+                <Select value={toChain} onValueChange={(value) => setToChain(value as Chain)}>
                   <SelectTrigger className="border-0 bg-transparent text-white font-medium p-0 h-auto">
                     <SelectValue />
                   </SelectTrigger>
@@ -243,7 +242,7 @@ export function BridgeInterface() {
                 </Select>
               </div>
               <span className="text-sm text-slate-400">
-                Balance: 0.0000 {toToken}
+                Balance: 0.0000 {token}
               </span>
             </div>
             <div className="flex items-center justify-between">
@@ -251,7 +250,7 @@ export function BridgeInterface() {
                 {estimatedReceived || "0.0"}
               </div>
               <span className="text-sm text-slate-400">
-                {formatUsdValue(estimatedReceived, toToken)}
+                {formatUsdValue(estimatedReceived, token)}
               </span>
             </div>
           </div>
@@ -263,7 +262,7 @@ export function BridgeInterface() {
             <div className="flex justify-between text-sm">
               <span className="text-slate-400">Bridge Fee</span>
               <span className="text-white">
-                {bridgeRate.fee}% ({amount ? (parseFloat(amount) * parseFloat(bridgeRate.fee) / 100).toFixed(6) : '0'} {fromToken})
+                {bridgeRate.fee}% ({amount ? (parseFloat(amount) * parseFloat(bridgeRate.fee) / 100).toFixed(6) : '0'} {token})
               </span>
             </div>
             <div className="flex justify-between text-sm">
@@ -277,7 +276,7 @@ export function BridgeInterface() {
             <Separator className="bg-slate-600" />
             <div className="flex justify-between font-medium">
               <span className="text-slate-300">You will receive</span>
-              <span className="text-white">≈ {estimatedReceived || '0'} {toToken}</span>
+              <span className="text-white">≈ {estimatedReceived || '0'} {token}</span>
             </div>
           </div>
         )}
