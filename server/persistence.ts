@@ -30,6 +30,7 @@ export class RelayPersistence {
     this.db.pragma('mmap_size = 268435456'); // 256MB
     
     this.initializeDatabase();
+    this.performStartupChecks();
     console.log(`Database initialized with WAL mode at: ${path}`);
   }
 
@@ -316,6 +317,39 @@ export class RelayPersistence {
   // Close database connection
   close(): void {
     this.db.close();
+  }
+
+  private performStartupChecks(): void {
+    console.log('Performing database startup checks...');
+    
+    // Check database integrity
+    const integrityOk = this.checkIntegrity();
+    if (!integrityOk) {
+      throw new Error('Database integrity check failed - database may be corrupted');
+    }
+    console.log('✅ Database integrity check passed');
+    
+    // Check WAL mode is active
+    const walMode = this.db.pragma('journal_mode', { simple: true });
+    if (walMode !== 'wal') {
+      console.warn(`Warning: Expected WAL mode, got ${walMode}`);
+    } else {
+      console.log('✅ WAL mode confirmed active');
+    }
+    
+    // Check disk space and statistics
+    try {
+      const stats = this.getStats();
+      console.log(`📊 Database contains ${stats.total} total events`);
+      console.log(`   - Pending: ${stats.pending}`);
+      console.log(`   - Confirmed: ${stats.confirmed}`);
+      console.log(`   - Processed: ${stats.processed}`);
+      console.log(`   - Failed: ${stats.failed}`);
+    } catch (error) {
+      console.error('Warning: Could not retrieve database statistics:', error);
+    }
+    
+    console.log('Database startup checks completed');
   }
 
   // Backup database
