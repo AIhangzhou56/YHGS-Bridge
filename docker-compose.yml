@@ -1,0 +1,103 @@
+version: '3.8'
+
+services:
+  relay:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: eth-bsc-relay
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - DATABASE_PATH=/app/data/relay.db
+      - ETHEREUM_RPC_URL=${ETHEREUM_RPC_URL:-https://ethereum-sepolia.blockpi.network/v1/rpc/public}
+      - BSC_RPC_URL=${BSC_RPC_URL:-https://data-seed-prebsc-1-s1.binance.org:8545}
+      - ETHEREUM_PRIVATE_KEY=${ETHEREUM_PRIVATE_KEY}
+      - BSC_PRIVATE_KEY=${BSC_PRIVATE_KEY}
+      - ETHEREUM_BRIDGE_CONTRACT=${ETHEREUM_BRIDGE_CONTRACT}
+      - BSC_BRIDGE_CONTRACT=${BSC_BRIDGE_CONTRACT}
+    volumes:
+      - relay_data:/app/data
+    networks:
+      - bridge_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/stats"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: bridge-frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"
+    depends_on:
+      - relay
+    networks:
+      - bridge_network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:v2.47.0
+    container_name: bridge-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - bridge_network
+    depends_on:
+      - relay
+
+  grafana:
+    image: grafana/grafana:10.1.0
+    container_name: bridge-grafana
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+      - GF_INSTALL_PLUGINS=grafana-clock-panel,grafana-simple-json-datasource
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - bridge_network
+    depends_on:
+      - prometheus
+
+volumes:
+  relay_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  bridge_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

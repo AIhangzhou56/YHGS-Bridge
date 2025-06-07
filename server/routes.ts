@@ -360,6 +360,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Prometheus metrics endpoint
+  app.get("/metrics", async (req, res) => {
+    try {
+      const { relayPersistence } = await import('./persistence');
+      const stats = relayPersistence.getStats();
+      
+      // Get relay status if available
+      let relayStatus;
+      try {
+        const { ethereumBSCRelay } = await import('./eth-bsc-relay');
+        relayStatus = await ethereumBSCRelay.getRelayStatus();
+      } catch {
+        relayStatus = { isRunning: false, processedEvents: 0, ethereumBlock: 0, bscBlock: 0 };
+      }
+
+      const metrics = `# HELP bridge_events_total Total number of bridge events by status
+# TYPE bridge_events_total counter
+bridge_events_total{status="pending"} ${stats.pending}
+bridge_events_total{status="confirmed"} ${stats.confirmed}
+bridge_events_total{status="processed"} ${stats.processed}
+bridge_events_total{status="failed"} ${stats.failed}
+
+# HELP bridge_relay_running Whether the relay service is running
+# TYPE bridge_relay_running gauge
+bridge_relay_running ${relayStatus.isRunning ? 1 : 0}
+
+# HELP bridge_ethereum_block_height Latest Ethereum block height
+# TYPE bridge_ethereum_block_height gauge
+bridge_ethereum_block_height ${relayStatus.ethereumBlock}
+
+# HELP bridge_bsc_block_height Latest BSC block height
+# TYPE bridge_bsc_block_height gauge
+bridge_bsc_block_height ${relayStatus.bscBlock}
+
+# HELP bridge_last_processed_block Last fully processed Ethereum block
+# TYPE bridge_last_processed_block gauge
+bridge_last_processed_block ${stats.lastProcessedBlock}
+
+# HELP bridge_total_events Total events in database
+# TYPE bridge_total_events gauge
+bridge_total_events ${stats.total}
+`;
+
+      res.set('Content-Type', 'text/plain');
+      res.send(metrics);
+    } catch (error) {
+      console.error('Metrics error:', error);
+      res.status(500).send('# Error generating metrics\n');
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
