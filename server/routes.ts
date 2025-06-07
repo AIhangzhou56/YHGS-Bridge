@@ -209,6 +209,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Testnet bridge endpoints
+  app.get("/api/testnet/:action", async (req, res) => {
+    const { handleTestnetBridge } = await import('./testnet-bridge');
+    await handleTestnetBridge(req, res);
+  });
+
+  app.post("/api/testnet/:action", async (req, res) => {
+    const { handleTestnetBridge } = await import('./testnet-bridge');
+    await handleTestnetBridge(req, res);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
