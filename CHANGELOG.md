@@ -5,6 +5,39 @@ All notable changes to the YHGS Multi-Chain Bridge will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2024-06-07 - Light-Client PoC
+
+### Added - Smart Contract Infrastructure
+- **ReceiptVerifier.sol**: Cryptographic verification of transaction receipts using Merkle proofs and RLP encoding
+- **HeaderStore.sol**: Light client functionality with block header storage and BLS signature verification placeholders
+- Enhanced bridge contracts with receipt proof verification capabilities
+
+### Added - Enhanced Relay System
+- **generateReceiptProof()**: Implementation using eth_getProof + RLP encoding for cryptographic verification
+- **Enhanced mint payload**: Includes block header, receipt proof, and log index for complete verification
+- **Adaptive confirmation depths**: Environment-configurable (CONFIRMATIONS_ETH=12, CONFIRMATIONS_BSC=15)
+- **Automatic reorg detection**: Monitors blockHash mismatches and resets event status to pending
+
+### Added - Security & Audit Pipeline
+- **docker-compose.test.yml**: Automated security testing with Slither + Mythril
+- **scripts/security-audit.sh**: Comprehensive security audit script with SARIF output
+- **GitHub Code Scanning**: Integration ready for continuous security monitoring
+
+### Added - Database & Maintenance
+- **WAL mode optimization**: PRAGMA synchronous=NORMAL, journal_mode=WAL for enhanced performance
+- **scripts/cron.sh**: Automated database maintenance with VACUUM and backup
+- **Periodic cleanup**: Automatic removal of old processed events (30+ days)
+- **Compressed backups**: Automated .db.gz backup creation with retention policy
+
+### Added - Documentation & Planning
+- **docs/gnosis-safe.md**: Comprehensive migration plan for multi-signature wallet integration
+- **Light-Client PoC section**: Enhanced README with cryptographic verification details
+
+### Enhanced - System Architecture
+- **Mint transaction verification**: Enhanced payload structure with cryptographic proofs
+- **Reorg protection**: Automatic event rollback on chain reorganization detection
+- **Receipt verification**: Complete transaction proof validation using Ethereum state proofs
+
 ## [1.0.0] - 2024-06-07
 
 ### Added
