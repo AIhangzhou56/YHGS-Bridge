@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { useWallet } from "@/hooks/use-wallet";
 import { WalletConnection } from "./wallet-connection";
 import { useState } from "react";
-import { BringToFront, Wallet, TrendingUp } from "lucide-react";
+import { BringToFront, Wallet, TrendingUp, MessageCircle } from "lucide-react";
 
 export function Header() {
   const { walletState, disconnectWallet } = useWallet();
@@ -31,6 +31,15 @@ export function Header() {
                 <a href="/mirror" className="text-slate-400 hover:text-slate-200 transition-colors">Mirror</a>
                 <a href="/relay" className="text-slate-400 hover:text-slate-200 transition-colors">Relay</a>
                 <a href="/testnet" className="text-slate-400 hover:text-slate-200 transition-colors">Testnet</a>
+                <a 
+                  href="https://t.me/yhgs_multichain_bridge" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="text-slate-400 hover:text-slate-200 transition-colors flex items-center"
+                >
+                  <MessageCircle className="w-4 h-4 mr-1" />
+                  Community
+                </a>
               </nav>
             </div>
             
