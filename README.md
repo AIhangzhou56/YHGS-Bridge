@@ -157,6 +157,51 @@ function mint(
 ) external;
 ```
 
+## 🔐 Light-Client PoC (v1.1)
+
+### Enhanced Security Features
+- **Receipt Verification**: Cryptographic proof verification using Merkle trees and RLP encoding
+- **Header Store**: Light client functionality with block header validation and BLS signature placeholders
+- **Adaptive Confirmations**: Environment-configurable confirmation depths (ETH: 12, BSC: 15 blocks)
+- **Reorg Protection**: Automatic rollback detection and event status reset on chain reorganizations
+
+### Smart Contract Enhancements
+```solidity
+// ReceiptVerifier.sol - Verifies transaction receipt proofs
+function verifyReceiptProof(
+    bytes32 blockHash,
+    bytes memory receiptRLP,
+    bytes32[] memory proof,
+    uint256 logIndex
+) external view returns (bool)
+
+// HeaderStore.sol - Stores verified block headers
+function submitHeader(
+    bytes32 blockHash,
+    bytes32 parentHash,
+    bytes32 receiptsRoot,
+    uint256 blockNumber,
+    BLSSignature calldata signature
+) external onlyValidator
+```
+
+### Relay System Improvements
+- **generateReceiptProof()**: Uses eth_getProof and RLP encoding for cryptographic verification
+- **Enhanced mint payload**: Includes block header, receipt proof, and log index
+- **Automatic reorg handling**: Resets pending events when block hash mismatches detected
+
+### Security Pipeline
+```bash
+# Run security audit
+docker compose -f docker-compose.test.yml up --build security-audit
+
+# Generate SARIF report
+./scripts/security-audit.sh
+
+# Continuous monitoring
+docker compose up -d prometheus grafana
+```
+
 ## 🔍 Development
 
 ### Local Development
