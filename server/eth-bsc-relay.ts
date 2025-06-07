@@ -9,6 +9,10 @@ const MAX_REORG_DEPTH = 64; // Maximum expected reorg depth
 const CONFIRMATIONS_ETH = parseInt(process.env.CONFIRMATIONS_ETH || '12');
 const CONFIRMATIONS_BSC = parseInt(process.env.CONFIRMATIONS_BSC || '15');
 
+// Header Store contract configuration
+const HEADER_STORE_CONTRACT = process.env.HEADER_STORE_CONTRACT || '0x0000000000000000000000000000000000000000';
+const RECEIPT_VERIFIER_CONTRACT = process.env.RECEIPT_VERIFIER_CONTRACT || '0x0000000000000000000000000000000000000000';
+
 interface LockEventData {
   token: string;
   sender: string;
@@ -55,6 +59,8 @@ export class EthereumBSCRelay {
   private bscSigner: ethers.Wallet;
   private ethBridge: ethers.Contract;
   private bscBridge: ethers.Contract;
+  private headerStore: ethers.Contract | null = null;
+  private receiptVerifier: ethers.Contract | null = null;
   private processedNonces: Set<string> = new Set();
   private isRunning: boolean = false;
 

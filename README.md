@@ -351,6 +351,19 @@ Pre-configured alerts for production monitoring:
 - ✅ 12-block confirmation depth for security
 - ✅ Automatic event cleanup and database maintenance
 
+## 🤝 Community & Support
+
+Join our active Telegram community for support, discussions, and updates:
+
+**📱 [Join YHGS Multi-Chain Bridge Community](https://t.me/yhgs_multichain_bridge)**
+
+Community features:
+- Real-time support from developers and users
+- Bridge status updates and announcements
+- Technical discussions and troubleshooting
+- Feature requests and feedback
+- Network maintenance notifications
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -358,6 +371,8 @@ Pre-configured alerts for production monitoring:
 3. Commit changes (`git commit -m 'Add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open Pull Request
+
+For questions about contributing, join our [Telegram community](https://t.me/yhgs_multichain_bridge)
 
 ## 📄 License
 

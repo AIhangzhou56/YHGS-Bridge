@@ -44,6 +44,16 @@ export function Header() {
             </div>
             
             <div className="flex items-center space-x-4">
+              {/* Community button for mobile */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="md:hidden text-slate-400 hover:text-slate-200"
+                onClick={() => window.open('https://t.me/yhgs_multichain_bridge', '_blank')}
+              >
+                <MessageCircle className="w-4 h-4" />
+              </Button>
+              
               <div className="hidden sm:block">
                 <div className="bg-slate-800 px-3 py-2 rounded-lg text-sm">
                   <span className="text-slate-400">Gas:</span>
