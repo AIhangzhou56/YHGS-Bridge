@@ -19,9 +19,18 @@ export class RelayPersistence {
   private db: Database.Database;
 
   constructor(dbPath?: string) {
-    const path = dbPath || join(process.cwd(), 'relay.db');
+    const path = dbPath || process.env.DATABASE_PATH || join(process.cwd(), 'relay.db');
     this.db = new Database(path);
+    
+    // Enable WAL mode for better concurrency and crash safety
+    this.db.pragma('journal_mode = WAL');
+    this.db.pragma('synchronous = NORMAL');
+    this.db.pragma('cache_size = 10000');
+    this.db.pragma('temp_store = memory');
+    this.db.pragma('mmap_size = 268435456'); // 256MB
+    
     this.initializeDatabase();
+    console.log(`Database initialized with WAL mode at: ${path}`);
   }
 
   private initializeDatabase(): void {
