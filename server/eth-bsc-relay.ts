@@ -396,6 +396,169 @@ export class EthereumBSCRelay {
     }
   }
 
+  // Start confirmation processor for reorg safety
+  private startConfirmationProcessor(): void {
+    const processInterval = setInterval(async () => {
+      try {
+        await this.processConfirmedEvents();
+      } catch (error) {
+        console.error('Error in confirmation processor:', error);
+      }
+    }, 30000); // Check every 30 seconds
+
+    (this as any).confirmationProcessor = processInterval;
+  }
+
+  // Process events that have received sufficient confirmations
+  private async processConfirmedEvents(): Promise<void> {
+    try {
+      const currentBlock = await this.ethProvider.getBlockNumber();
+      
+      // Check events awaiting confirmation
+      const pendingEvents = relayPersistence.getEventsAwaitingConfirmation(currentBlock, CONFIRMATION_DEPTH);
+      
+      for (const event of pendingEvents) {
+        const isValid = await this.verifyEventIntegrity(event);
+        
+        if (isValid) {
+          relayPersistence.markEventConfirmed(event.transactionHash, event.logIndex);
+          console.log(`Event confirmed: ${event.transactionHash}-${event.logIndex}`);
+        } else {
+          relayPersistence.markEventFailed(event.transactionHash, event.logIndex, 'Event removed due to reorg');
+          console.log(`Event reorged: ${event.transactionHash}-${event.logIndex}`);
+        }
+      }
+
+      // Process confirmed events
+      const confirmedEvents = relayPersistence.getConfirmedEvents(5);
+      
+      for (const event of confirmedEvents) {
+        await this.processConfirmedEvent(event);
+      }
+
+    } catch (error) {
+      console.error('Error processing confirmed events:', error);
+    }
+  }
+
+  // Verify event hasn't been removed due to reorg
+  private async verifyEventIntegrity(event: any): Promise<boolean> {
+    try {
+      const currentBlock = await this.ethProvider.getBlock(event.blockNumber);
+      
+      if (!currentBlock || currentBlock.hash !== event.blockHash) {
+        return false;
+      }
+
+      const receipt = await this.ethProvider.getTransactionReceipt(event.transactionHash);
+      if (!receipt || receipt.blockHash !== event.blockHash) {
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error verifying event integrity:', error);
+      return false;
+    }
+  }
+
+  // Process a confirmed event by generating proof and submitting mint
+  private async processConfirmedEvent(event: any): Promise<void> {
+    try {
+      console.log(`Processing confirmed event: ${event.transactionHash}-${event.logIndex}`);
+
+      const nonceUsed = await this.bscBridge.isNonceUsed(event.nonce);
+      if (nonceUsed) {
+        relayPersistence.markEventFailed(event.transactionHash, event.logIndex, 'Nonce already used on BSC');
+        return;
+      }
+
+      const receipt = await this.ethProvider.getTransactionReceipt(event.transactionHash);
+      if (!receipt) {
+        throw new Error('Transaction receipt not found');
+      }
+
+      const lockLog = receipt.logs[event.logIndex];
+      if (!lockLog) {
+        throw new Error('Lock event log not found');
+      }
+
+      const parsedLog = this.ethBridge.interface.parseLog({
+        topics: lockLog.topics,
+        data: lockLog.data
+      });
+
+      if (parsedLog) {
+        const lockData: LockEventData = {
+          token: parsedLog.args.token,
+          sender: parsedLog.args.sender,
+          amount: parsedLog.args.amount,
+          targetChain: 'bsc',
+          targetAddr: parsedLog.args.targetAddr,
+          nonce: event.nonce,
+          blockNumber: event.blockNumber,
+          transactionHash: event.transactionHash,
+          blockHash: event.blockHash,
+          logIndex: event.logIndex
+        };
+
+        const proof = await this.generateProof(lockData);
+        const mintTxHash = await this.submitMintToBSCWithReturn(lockData, proof);
+
+        relayPersistence.markEventProcessed(event.transactionHash, event.logIndex, mintTxHash);
+        console.log(`✅ Event processed successfully: ${event.transactionHash}`);
+      }
+
+    } catch (error) {
+      console.error(`Failed to process confirmed event: ${event.transactionHash}`, error);
+      relayPersistence.markEventFailed(event.transactionHash, event.logIndex, error instanceof Error ? error.message : 'Processing failed');
+    }
+  }
+
+  // Enhanced mint submission with return value
+  private async submitMintToBSCWithReturn(lockData: LockEventData, proof: string): Promise<string> {
+    console.log(`Submitting mint transaction to BSC...`);
+
+    const gasEstimate = await this.bscBridge.mint.estimateGas(
+      lockData.token,
+      lockData.targetAddr,
+      lockData.amount,
+      lockData.nonce,
+      proof
+    );
+
+    const gasLimit = (gasEstimate * BigInt(125)) / BigInt(100);
+    const feeData = await this.bscProvider.getFeeData();
+
+    const mintTx = await this.bscBridge.mint(
+      lockData.token,
+      lockData.targetAddr,
+      lockData.amount,
+      lockData.nonce,
+      proof,
+      { 
+        gasLimit,
+        gasPrice: feeData.gasPrice 
+      }
+    );
+
+    console.log(`🚀 Mint transaction submitted: ${mintTx.hash}`);
+
+    const receipt = await Promise.race([
+      mintTx.wait(),
+      new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Transaction timeout")), 300000)
+      )
+    ]) as any;
+
+    if (receipt?.status === 1) {
+      console.log(`✅ Mint confirmed on BSC: ${mintTx.hash}`);
+      return mintTx.hash;
+    } else {
+      throw new Error("Mint transaction failed or reverted");
+    }
+  }
+
   stop(): void {
     if (!this.isRunning) {
       console.log("Relay is not running");
@@ -404,6 +567,11 @@ export class EthereumBSCRelay {
 
     console.log("Stopping Ethereum-BSC relay service...");
     this.ethBridge.removeAllListeners();
+    
+    if ((this as any).confirmationProcessor) {
+      clearInterval((this as any).confirmationProcessor);
+    }
+    
     this.isRunning = false;
     console.log("Relay service stopped");
   }

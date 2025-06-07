@@ -325,6 +325,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/relay/events", async (req, res) => {
+    try {
+      const { relayPersistence } = await import('./persistence');
+      const limit = parseInt(req.query.limit as string) || 50;
+      const events = relayPersistence.getRecentEvents(Math.min(limit, 100));
+      res.json({ success: true, events });
+    } catch (error) {
+      console.error('Get events error:', error);
+      res.status(500).json({ error: "Failed to retrieve events" });
+    }
+  });
+
+  app.get("/api/relay/stats", async (req, res) => {
+    try {
+      const { relayPersistence } = await import('./persistence');
+      const stats = relayPersistence.getStats();
+      res.json({ success: true, stats });
+    } catch (error) {
+      console.error('Get stats error:', error);
+      res.status(500).json({ error: "Failed to retrieve statistics" });
+    }
+  });
+
+  app.post("/api/relay/cleanup", async (req, res) => {
+    try {
+      const { relayPersistence } = await import('./persistence');
+      const { days = 30 } = req.body;
+      const cleaned = relayPersistence.cleanupOldEvents(days);
+      res.json({ success: true, cleanedEvents: cleaned });
+    } catch (error) {
+      console.error('Cleanup error:', error);
+      res.status(500).json({ error: "Failed to cleanup old events" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
