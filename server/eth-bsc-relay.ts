@@ -1,9 +1,13 @@
 import { ethers } from "ethers";
 import { relayPersistence } from "./persistence";
 
-// Configuration for reorg safety
-const CONFIRMATION_DEPTH = 12; // Wait for 12 block confirmations
+// Configuration for reorg safety with adaptive confirmation depth
+const DEFAULT_CONFIRMATION_DEPTH = 12; // Default block confirmations
 const MAX_REORG_DEPTH = 64; // Maximum expected reorg depth
+
+// Environment-based confirmation depths
+const CONFIRMATIONS_ETH = parseInt(process.env.CONFIRMATIONS_ETH || '12');
+const CONFIRMATIONS_BSC = parseInt(process.env.CONFIRMATIONS_BSC || '6');
 
 interface LockEventData {
   token: string;
@@ -27,6 +31,21 @@ interface ProofData {
   receiptsRoot: string;
   stateRoot: string;
   eventData: string;
+}
+
+interface ReceiptProof {
+  blockHash: string;
+  receiptsRoot: string;
+  receipt: string;
+  proof: string[];
+  logIndex: number;
+  receiptIndex: number;
+  blockHeader: {
+    parentHash: string;
+    receiptsRoot: string;
+    blockNumber: number;
+    timestamp: number;
+  };
 }
 
 export class EthereumBSCRelay {
@@ -208,9 +227,9 @@ export class EthereumBSCRelay {
       console.log(`  Target: ${lockData.targetAddr}`);
       console.log(`  Nonce: ${lockData.nonce}`);
 
-      // Calculate confirmation requirement
+      // Calculate confirmation requirement using adaptive depth
       const currentBlock = await this.ethProvider.getBlockNumber();
-      const confirmationBlock = lockData.blockNumber + CONFIRMATION_DEPTH;
+      const confirmationBlock = lockData.blockNumber + CONFIRMATIONS_ETH;
 
       // Store event with pending status for reorg safety
       const stored = relayPersistence.storeEvent({
@@ -224,7 +243,7 @@ export class EthereumBSCRelay {
       });
 
       if (stored) {
-        console.log(`Event stored, waiting for ${CONFIRMATION_DEPTH} confirmations (current: ${currentBlock}, required: ${confirmationBlock})`);
+        console.log(`Event stored, waiting for ${CONFIRMATIONS_ETH} confirmations (current: ${currentBlock}, required: ${confirmationBlock})`);
       }
 
     } catch (error) {
@@ -415,7 +434,7 @@ export class EthereumBSCRelay {
       const currentBlock = await this.ethProvider.getBlockNumber();
       
       // Check events awaiting confirmation
-      const pendingEvents = relayPersistence.getEventsAwaitingConfirmation(currentBlock, CONFIRMATION_DEPTH);
+      const pendingEvents = relayPersistence.getEventsAwaitingConfirmation(currentBlock, CONFIRMATIONS_ETH);
       
       for (const event of pendingEvents) {
         const isValid = await this.verifyEventIntegrity(event);
