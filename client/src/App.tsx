@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Bridge from "@/pages/bridge";
 import Testnet from "@/pages/testnet";
 import Mirror from "@/pages/mirror";
+import Relay from "@/pages/relay";
 import NotFound from "@/pages/not-found";
 
 function Router() {

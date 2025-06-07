@@ -280,6 +280,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Ethereum-BSC Relay endpoints
+  app.get("/api/relay/status", async (req, res) => {
+    try {
+      const { ethereumBSCRelay } = await import('./eth-bsc-relay');
+      const status = await ethereumBSCRelay.getRelayStatus();
+      res.json({ success: true, status });
+    } catch (error) {
+      console.error('Relay status error:', error);
+      res.status(500).json({ error: "Failed to get relay status" });
+    }
+  });
+
+  app.post("/api/relay/start", async (req, res) => {
+    try {
+      const { ethereumBSCRelay } = await import('./eth-bsc-relay');
+      await ethereumBSCRelay.start();
+      res.json({ success: true, message: "Relay service started" });
+    } catch (error) {
+      console.error('Relay start error:', error);
+      res.status(500).json({ error: "Failed to start relay service" });
+    }
+  });
+
+  app.post("/api/relay/stop", async (req, res) => {
+    try {
+      const { ethereumBSCRelay } = await import('./eth-bsc-relay');
+      ethereumBSCRelay.stop();
+      res.json({ success: true, message: "Relay service stopped" });
+    } catch (error) {
+      console.error('Relay stop error:', error);
+      res.status(500).json({ error: "Failed to stop relay service" });
+    }
+  });
+
+  app.get("/api/relay/test-connections", async (req, res) => {
+    try {
+      const { ethereumBSCRelay } = await import('./eth-bsc-relay');
+      const connected = await ethereumBSCRelay.testConnections();
+      res.json({ success: true, connected });
+    } catch (error) {
+      console.error('Connection test error:', error);
+      res.status(500).json({ error: "Failed to test connections" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
