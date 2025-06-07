@@ -1,4 +1,4 @@
-# Ethereum-BSC Bridge Relay System
+# YHGS Multi-Chain Bridge
 
 A production-ready blockchain bridge platform enabling cross-chain asset transfers between Ethereum and Binance Smart Chain (BSC) using the Lock & Mint model.
 
@@ -21,7 +21,7 @@ The system implements a trustless bridge mechanism:
 ### 1. Clone and Configure
 ```bash
 git clone <repository-url>
-cd ethereum-bsc-bridge
+cd yhgs-multi-chain-bridge
 cp .env.example .env
 ```
 

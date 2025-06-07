@@ -5,7 +5,7 @@ services:
     build:
       context: ./server
       dockerfile: Dockerfile
-    container_name: eth-bsc-relay
+    container_name: yhgs-bridge-relay
     restart: unless-stopped
     ports:
       - "5000:5000"
@@ -33,7 +33,7 @@ services:
     build:
       context: ./client
       dockerfile: Dockerfile
-    container_name: bridge-frontend
+    container_name: yhgs-bridge-frontend
     restart: unless-stopped
     ports:
       - "3000:80"

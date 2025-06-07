@@ -23,7 +23,7 @@ export function Header() {
                   <BringToFront className="w-4 h-4 text-white" />
                 </div>
                 <span className="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                  CryptoVault
+                  YHGS Multi-Chain Bridge
                 </span>
               </div>
               <nav className="hidden md:flex space-x-6">
