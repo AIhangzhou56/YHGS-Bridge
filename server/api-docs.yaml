@@ -1,0 +1,336 @@
+openapi: 3.0.3
+info:
+  title: Ethereum-BSC Relay API
+  description: |
+    REST API for monitoring and controlling the Ethereum to BSC bridge relay service.
+    
+    The relay service automatically detects ERC-20 lock events on Ethereum Sepolia testnet
+    and submits mint proofs to BSC testnet with reorg safety and persistence.
+  version: 1.0.0
+  contact:
+    name: Bridge Relay Support
+  license:
+    name: MIT
+
+servers:
+  - url: /api
+    description: Relay API endpoints
+
+paths:
+  /relay/status:
+    get:
+      summary: Get relay service status
+      description: Returns comprehensive status information about the relay service including network blocks, processed events, and persistence statistics
+      tags:
+        - Relay Monitoring
+      responses:
+        '200':
+          description: Relay status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  status:
+                    $ref: '#/components/schemas/RelayStatus'
+        '500':
+          description: Failed to get relay status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /relay/start:
+    post:
+      summary: Start relay service
+      description: Starts the Ethereum-BSC relay service to begin monitoring lock events
+      tags:
+        - Relay Control
+      responses:
+        '200':
+          description: Relay service started successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Relay service started"
+        '500':
+          description: Failed to start relay service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /relay/stop:
+    post:
+      summary: Stop relay service
+      description: Stops the Ethereum-BSC relay service
+      tags:
+        - Relay Control
+      responses:
+        '200':
+          description: Relay service stopped successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Relay service stopped"
+        '500':
+          description: Failed to stop relay service
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /relay/test-connections:
+    get:
+      summary: Test network connections
+      description: Tests connectivity to both Ethereum and BSC networks
+      tags:
+        - Relay Diagnostics
+      responses:
+        '200':
+          description: Connection test completed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  connected:
+                    type: boolean
+                    description: Whether both networks are accessible
+                    example: true
+        '500':
+          description: Connection test failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /relay/events:
+    get:
+      summary: Get recent processed events
+      description: Returns list of recently processed bridge events with their status
+      tags:
+        - Event Monitoring
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of events to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: status
+          in: query
+          description: Filter events by status
+          schema:
+            type: string
+            enum: [pending, confirmed, processed, failed]
+      responses:
+        '200':
+          description: Events retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ProcessedEvent'
+        '500':
+          description: Failed to retrieve events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /relay/stats:
+    get:
+      summary: Get processing statistics
+      description: Returns detailed statistics about event processing
+      tags:
+        - Relay Monitoring
+      responses:
+        '200':
+          description: Statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  stats:
+                    $ref: '#/components/schemas/ProcessingStats'
+        '500':
+          description: Failed to retrieve statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    RelayStatus:
+      type: object
+      properties:
+        isRunning:
+          type: boolean
+          description: Whether the relay service is currently active
+          example: true
+        processedEvents:
+          type: integer
+          description: Total number of successfully processed events
+          example: 42
+        ethereumBlock:
+          type: integer
+          description: Latest Ethereum block number
+          example: 4567890
+        bscBlock:
+          type: integer
+          description: Latest BSC block number
+          example: 9876543
+        ethBridge:
+          type: string
+          description: Ethereum bridge contract address
+          example: "0x1234567890123456789012345678901234567890"
+        bscBridge:
+          type: string
+          description: BSC bridge contract address
+          example: "0x2345678901234567890123456789012345678901"
+        ethSigner:
+          type: string
+          description: Ethereum signer address
+          example: "0x3456789012345678901234567890123456789012"
+        bscSigner:
+          type: string
+          description: BSC signer address
+          example: "0x4567890123456789012345678901234567890123"
+        confirmationDepth:
+          type: integer
+          description: Number of block confirmations required for reorg safety
+          example: 12
+        persistenceStats:
+          $ref: '#/components/schemas/ProcessingStats'
+
+    ProcessingStats:
+      type: object
+      properties:
+        total:
+          type: integer
+          description: Total number of events in database
+          example: 100
+        pending:
+          type: integer
+          description: Events awaiting confirmation
+          example: 5
+        confirmed:
+          type: integer
+          description: Events confirmed and ready for processing
+          example: 3
+        processed:
+          type: integer
+          description: Successfully processed events
+          example: 85
+        failed:
+          type: integer
+          description: Failed events
+          example: 7
+        lastProcessedBlock:
+          type: integer
+          description: Last Ethereum block that was fully processed
+          example: 4567885
+
+    ProcessedEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Unique event ID
+          example: 123
+        transactionHash:
+          type: string
+          description: Ethereum transaction hash
+          example: "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
+        logIndex:
+          type: integer
+          description: Log index within the transaction
+          example: 0
+        nonce:
+          type: string
+          description: Unique nonce for the bridge operation
+          example: "0x123456789abcdef123456789abcdef123456789abcdef123456789abcdef12"
+        blockNumber:
+          type: integer
+          description: Ethereum block number
+          example: 4567890
+        blockHash:
+          type: string
+          description: Ethereum block hash
+          example: "0x1111111111111111111111111111111111111111111111111111111111111111"
+        confirmationBlock:
+          type: integer
+          description: Block number when event will be confirmed
+          example: 4567902
+        status:
+          type: string
+          enum: [pending, confirmed, processed, failed]
+          description: Current processing status
+          example: "processed"
+        mintTxHash:
+          type: string
+          nullable: true
+          description: BSC mint transaction hash (if processed)
+          example: "0xdef456789012345678901234567890123456789012345678901234567890abcd"
+        processedAt:
+          type: integer
+          nullable: true
+          description: Unix timestamp when event was processed
+          example: 1640995200
+        createdAt:
+          type: integer
+          description: Unix timestamp when event was first detected
+          example: 1640995000
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Failed to get relay status"
+
+tags:
+  - name: Relay Monitoring
+    description: Endpoints for monitoring relay service status and statistics
+  - name: Relay Control
+    description: Endpoints for starting and stopping the relay service
+  - name: Relay Diagnostics
+    description: Endpoints for testing and diagnosing relay functionality
+  - name: Event Monitoring
+    description: Endpoints for monitoring processed bridge events

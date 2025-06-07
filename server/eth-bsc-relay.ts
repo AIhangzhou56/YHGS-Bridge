@@ -1,4 +1,9 @@
 import { ethers } from "ethers";
+import { relayPersistence } from "./persistence";
+
+// Configuration for reorg safety
+const CONFIRMATION_DEPTH = 12; // Wait for 12 block confirmations
+const MAX_REORG_DEPTH = 64; // Maximum expected reorg depth
 
 interface LockEventData {
   token: string;
@@ -104,6 +109,9 @@ export class EthereumBSCRelay {
     // Set up event listener for new lock events
     this.ethBridge.on("Locked", this.handleLockEvent.bind(this));
 
+    // Start confirmation processing loop
+    this.startConfirmationProcessor();
+
     console.log("Relay service is now actively listening for lock events...");
   }
 
@@ -181,39 +189,53 @@ export class EthereumBSCRelay {
         return;
       }
 
-      // Skip if already processed
-      if (this.processedNonces.has(lockData.nonce)) {
-        console.log(`Nonce ${lockData.nonce} already processed locally`);
+      // Check if already stored in persistence layer
+      if (relayPersistence.isEventProcessed(lockData.transactionHash, lockData.logIndex)) {
+        console.log(`Event already stored: ${lockData.transactionHash}-${lockData.logIndex}`);
         return;
       }
 
-      // Check if nonce already used on BSC
-      const nonceUsed = await this.bscBridge.isNonceUsed(lockData.nonce);
-      if (nonceUsed) {
-        console.log(`Nonce ${lockData.nonce} already used on BSC`);
-        this.processedNonces.add(lockData.nonce);
+      // Check if nonce already used
+      if (relayPersistence.isNonceUsed(lockData.nonce)) {
+        console.log(`Nonce ${lockData.nonce} already used`);
         return;
       }
 
-      console.log(`Processing lock event: ${lockData.transactionHash}`);
+      console.log(`New lock event detected: ${lockData.transactionHash}`);
       console.log(`  Token: ${lockData.token}`);
       console.log(`  Sender: ${lockData.sender}`);
       console.log(`  Amount: ${ethers.formatEther(lockData.amount)} ETH`);
       console.log(`  Target: ${lockData.targetAddr}`);
       console.log(`  Nonce: ${lockData.nonce}`);
 
-      // Generate cryptographic proof of the lock event
-      const proof = await this.generateProof(lockData);
+      // Calculate confirmation requirement
+      const currentBlock = await this.ethProvider.getBlockNumber();
+      const confirmationBlock = lockData.blockNumber + CONFIRMATION_DEPTH;
 
-      // Submit mint transaction to BSC
-      await this.submitMintToBSC(lockData, proof);
+      // Store event with pending status for reorg safety
+      const stored = relayPersistence.storeEvent({
+        transactionHash: lockData.transactionHash,
+        logIndex: lockData.logIndex,
+        nonce: lockData.nonce,
+        blockNumber: lockData.blockNumber,
+        blockHash: lockData.blockHash,
+        confirmationBlock,
+        status: 'pending'
+      });
 
-      // Mark as processed
-      this.processedNonces.add(lockData.nonce);
-      console.log(`✅ Successfully relayed ${lockData.transactionHash}`);
+      if (stored) {
+        console.log(`Event stored, waiting for ${CONFIRMATION_DEPTH} confirmations (current: ${currentBlock}, required: ${confirmationBlock})`);
+      }
 
     } catch (error) {
-      console.error(`❌ Error processing lock event ${lockData.transactionHash}:`, error);
+      console.error(`Error processing lock event ${lockData.transactionHash}:`, error);
+      
+      // Mark as failed in persistence
+      try {
+        relayPersistence.markEventFailed(lockData.transactionHash, lockData.logIndex, error instanceof Error ? error.message : 'Unknown error');
+      } catch (persistError) {
+        console.error('Failed to mark event as failed:', persistError);
+      }
     }
   }
 
