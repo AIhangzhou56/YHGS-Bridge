@@ -5,7 +5,7 @@
 
 set -e
 
-echo "🚀 Preparing Ethereum-BSC Bridge Relay v1.0.0 Release"
+echo "🚀 Preparing YHGS Multi-Chain Bridge v1.0.0 Release"
 echo "=================================================="
 
 # Check if we're in a git repository
@@ -77,7 +77,7 @@ echo "GitHub Release Content:"
 echo "======================="
 cat << 'EOF'
 
-# 🚀 Ethereum-BSC Bridge Relay v1.0.0
+# 🚀 YHGS Multi-Chain Bridge v1.0.0
 
 Production-ready blockchain bridge enabling secure cross-chain asset transfers between Ethereum and Binance Smart Chain using the Lock & Mint model.
 

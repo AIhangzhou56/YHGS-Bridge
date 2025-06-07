@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
-  title: Ethereum-BSC Relay API
+  title: YHGS Multi-Chain Bridge API
   description: |
-    REST API for monitoring and controlling the Ethereum to BSC bridge relay service.
+    REST API for monitoring and controlling the YHGS Multi-Chain Bridge relay service.
     
     The relay service automatically detects ERC-20 lock events on Ethereum Sepolia testnet
     and submits mint proofs to BSC testnet with reorg safety and persistence.
