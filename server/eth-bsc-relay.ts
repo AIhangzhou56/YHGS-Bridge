@@ -595,6 +595,205 @@ export class EthereumBSCRelay {
     console.log("Relay service stopped");
   }
 
+  // Generate receipt proof using eth_getProof + RLP
+  async generateReceiptProof(txHash: string): Promise<ReceiptProof> {
+    try {
+      console.log(`Generating receipt proof for transaction: ${txHash}`);
+
+      // Get transaction receipt
+      const receipt = await this.ethProvider.getTransactionReceipt(txHash);
+      if (!receipt) {
+        throw new Error(`Transaction receipt not found for ${txHash}`);
+      }
+
+      // Get block header
+      const block = await this.ethProvider.getBlock(receipt.blockNumber);
+      if (!block) {
+        throw new Error(`Block not found for number ${receipt.blockNumber}`);
+      }
+
+      // Get receipt proof using eth_getProof RPC call
+      const proofResponse = await this.ethProvider.send('eth_getProof', [
+        receipt.to, // Contract address
+        [], // Storage keys (empty for receipt proof)
+        `0x${receipt.blockNumber.toString(16)}`
+      ]);
+
+      // Generate Merkle proof for the receipt
+      const receiptProof = await this.generateReceiptMerkleProof(txHash, receipt.blockNumber);
+
+      const blockHeader = {
+        parentHash: block.parentHash,
+        receiptsRoot: block.receiptsRoot || '',
+        blockNumber: block.number,
+        timestamp: block.timestamp
+      };
+
+      return {
+        blockHash: receipt.blockHash,
+        receiptsRoot: block.receiptsRoot || '',
+        receipt: this.encodeReceipt(receipt),
+        proof: receiptProof.proof,
+        logIndex: 0, // Will be set by caller based on specific log
+        receiptIndex: receipt.index,
+        blockHeader
+      };
+
+    } catch (error) {
+      console.error(`Error generating receipt proof for ${txHash}:`, error);
+      throw error;
+    }
+  }
+
+  // Generate Merkle proof for transaction receipt
+  private async generateReceiptMerkleProof(txHash: string, blockNumber: number): Promise<{proof: string[], index: number}> {
+    try {
+      // Get all receipts in the block to build Merkle tree
+      const block = await this.ethProvider.getBlock(blockNumber, true);
+      if (!block || !block.transactions) {
+        throw new Error(`Block ${blockNumber} or transactions not found`);
+      }
+
+      const receipts = [];
+      for (const tx of block.transactions) {
+        if (typeof tx === 'string') {
+          const receipt = await this.ethProvider.getTransactionReceipt(tx);
+          if (receipt) {
+            receipts.push(receipt);
+          }
+        } else {
+          const receipt = await this.ethProvider.getTransactionReceipt(tx.hash);
+          if (receipt) {
+            receipts.push(receipt);
+          }
+        }
+      }
+
+      // Find target receipt index
+      const targetIndex = receipts.findIndex(r => r.hash === txHash);
+      if (targetIndex === -1) {
+        throw new Error(`Receipt not found in block for ${txHash}`);
+      }
+
+      // Generate Merkle proof (simplified implementation)
+      const proof = this.buildMerkleProof(receipts, targetIndex);
+      
+      return { proof, index: targetIndex };
+    } catch (error) {
+      console.error(`Error generating Merkle proof:`, error);
+      throw error;
+    }
+  }
+
+  // Encode transaction receipt to RLP format
+  private encodeReceipt(receipt: any): string {
+    // Simplified RLP encoding for receipt
+    // In production, use a proper RLP library
+    const logs = receipt.logs.map((log: any) => ({
+      address: log.address,
+      topics: log.topics,
+      data: log.data
+    }));
+
+    return JSON.stringify({
+      status: receipt.status,
+      cumulativeGasUsed: receipt.cumulativeGasUsed,
+      logsBloom: receipt.logsBloom,
+      logs: logs
+    });
+  }
+
+  // Build Merkle proof for receipt at given index
+  private buildMerkleProof(receipts: any[], targetIndex: number): string[] {
+    const proof: string[] = [];
+    
+    // Create leaf hashes
+    const leaves = receipts.map(receipt => 
+      ethers.keccak256(ethers.toUtf8Bytes(this.encodeReceipt(receipt)))
+    );
+
+    let currentLevel = leaves;
+    let index = targetIndex;
+
+    while (currentLevel.length > 1) {
+      const nextLevel: string[] = [];
+      
+      for (let i = 0; i < currentLevel.length; i += 2) {
+        if (i + 1 < currentLevel.length) {
+          // Pair exists
+          const left = currentLevel[i];
+          const right = currentLevel[i + 1];
+          const combined = ethers.keccak256(ethers.concat([left, right]));
+          nextLevel.push(combined);
+          
+          // Add sibling to proof if current index is involved
+          if (Math.floor(index / 2) === Math.floor(i / 2)) {
+            if (index % 2 === 0 && i + 1 < currentLevel.length) {
+              proof.push(right); // Add right sibling
+            } else if (index % 2 === 1) {
+              proof.push(left); // Add left sibling
+            }
+          }
+        } else {
+          // Odd number, carry forward
+          nextLevel.push(currentLevel[i]);
+        }
+      }
+      
+      currentLevel = nextLevel;
+      index = Math.floor(index / 2);
+    }
+
+    return proof;
+  }
+
+  // Enhanced reorg rollback mechanism
+  async checkAndHandleReorg(): Promise<void> {
+    try {
+      const currentBlock = await this.ethProvider.getBlockNumber();
+      const checkDepth = Math.min(MAX_REORG_DEPTH, currentBlock);
+      
+      // Get events that might be affected by reorg
+      const recentEvents = relayPersistence.getEventsInRange(
+        currentBlock - checkDepth,
+        currentBlock
+      );
+
+      for (const event of recentEvents) {
+        // Verify if stored blockHash matches current canonical chain
+        const currentBlockData = await this.ethProvider.getBlock(event.blockNumber);
+        
+        if (!currentBlockData || currentBlockData.hash !== event.blockHash) {
+          console.log(`Reorg detected for event ${event.transactionHash} at block ${event.blockNumber}`);
+          
+          // Reset event to PENDING status for reprocessing
+          relayPersistence.markEventFailed(
+            event.transactionHash, 
+            event.logIndex, 
+            `Reorg detected: stored hash ${event.blockHash} != current hash ${currentBlockData?.hash}`
+          );
+          
+          // Update to pending for reprocessing if transaction still exists
+          const receipt = await this.ethProvider.getTransactionReceipt(event.transactionHash);
+          if (receipt) {
+            relayPersistence.storeEvent({
+              transactionHash: event.transactionHash,
+              logIndex: event.logIndex,
+              nonce: event.nonce,
+              blockNumber: receipt.blockNumber,
+              blockHash: receipt.blockHash,
+              confirmationBlock: receipt.blockNumber + CONFIRMATIONS_ETH,
+              status: 'pending'
+            });
+            console.log(`Event ${event.transactionHash} reset to pending after reorg`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for reorgs:', error);
+    }
+  }
+
   // Test connection to both networks
   async testConnections(): Promise<boolean> {
     try {

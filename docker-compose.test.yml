@@ -1,0 +1,126 @@
+version: '3.8'
+
+services:
+  # Security audit services
+  slither:
+    image: trailofbits/slither:latest
+    container_name: yhgs-bridge-slither
+    volumes:
+      - ./contracts:/contracts
+      - ./audit-reports:/reports
+    working_dir: /contracts
+    command: >
+      sh -c "
+        slither . --json /reports/slither-report.json --sarif /reports/slither-report.sarif || exit_code=$$?;
+        if [ $$exit_code -ge 3 ]; then
+          echo 'High or critical severity issues found';
+          exit 1;
+        fi;
+        echo 'Security audit passed';
+        exit 0;
+      "
+    networks:
+      - audit_network
+
+  mythril:
+    image: mythril/myth:latest
+    container_name: yhgs-bridge-mythril
+    volumes:
+      - ./contracts:/contracts
+      - ./audit-reports:/reports
+    working_dir: /contracts
+    command: >
+      sh -c "
+        find . -name '*.sol' -exec myth analyze {} --output json --output-dir /reports \; || exit_code=$$?;
+        if [ $$exit_code -ne 0 ]; then
+          echo 'Mythril analysis found issues';
+          exit 1;
+        fi;
+        echo 'Mythril analysis passed';
+        exit 0;
+      "
+    networks:
+      - audit_network
+
+  # Contract compilation and testing
+  contract-tests:
+    build:
+      context: .
+      dockerfile: contracts/Dockerfile.test
+    container_name: yhgs-bridge-contract-tests
+    volumes:
+      - ./contracts:/contracts
+      - ./test-reports:/reports
+    environment:
+      - NODE_ENV=test
+    command: >
+      sh -c "
+        npm install &&
+        npx hardhat compile &&
+        npx hardhat test --reporter json > /reports/test-results.json ||
+        (echo 'Contract tests failed' && exit 1)
+      "
+    networks:
+      - audit_network
+
+  # Integration testing with running bridge
+  integration-tests:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.test
+    container_name: yhgs-bridge-integration-tests
+    volumes:
+      - ./test-reports:/reports
+    environment:
+      - NODE_ENV=test
+      - ETHEREUM_RPC_URL=http://ganache:8545
+      - BSC_RPC_URL=http://ganache-bsc:8545
+    depends_on:
+      - ganache
+      - ganache-bsc
+    command: >
+      sh -c "
+        npm run test:integration --reporter json > /reports/integration-results.json ||
+        (echo 'Integration tests failed' && exit 1)
+      "
+    networks:
+      - audit_network
+
+  # Local test networks
+  ganache:
+    image: trufflesuite/ganache:latest
+    container_name: yhgs-test-ethereum
+    ports:
+      - "8545:8545"
+    command: >
+      --accounts 10
+      --deterministic
+      --host 0.0.0.0
+      --port 8545
+      --networkId 1337
+    networks:
+      - audit_network
+
+  ganache-bsc:
+    image: trufflesuite/ganache:latest
+    container_name: yhgs-test-bsc
+    ports:
+      - "8546:8545"
+    command: >
+      --accounts 10
+      --deterministic
+      --host 0.0.0.0
+      --port 8545
+      --networkId 97
+    networks:
+      - audit_network
+
+volumes:
+  audit_reports:
+    driver: local
+  test_reports:
+    driver: local
+
+networks:
+  audit_network:
+    driver: bridge

@@ -297,6 +297,22 @@ export class RelayPersistence {
     return stmt.all(limit) as ProcessedEvent[];
   }
 
+  // Get events in a specific block range for reorg checking
+  getEventsInRange(fromBlock: number, toBlock: number): ProcessedEvent[] {
+    try {
+      const stmt = this.db.prepare(`
+        SELECT * FROM processed_events 
+        WHERE block_number >= ? AND block_number <= ?
+        ORDER BY block_number ASC, log_index ASC
+      `);
+      
+      return stmt.all(fromBlock, toBlock) as ProcessedEvent[];
+    } catch (error) {
+      console.error('Error getting events in range:', error);
+      return [];
+    }
+  }
+
   // Close database connection
   close(): void {
     this.db.close();
