@@ -7,7 +7,7 @@ const MAX_REORG_DEPTH = 64; // Maximum expected reorg depth
 
 // Environment-based confirmation depths
 const CONFIRMATIONS_ETH = parseInt(process.env.CONFIRMATIONS_ETH || '12');
-const CONFIRMATIONS_BSC = parseInt(process.env.CONFIRMATIONS_BSC || '6');
+const CONFIRMATIONS_BSC = parseInt(process.env.CONFIRMATIONS_BSC || '15');
 
 interface LockEventData {
   token: string;
@@ -534,34 +534,56 @@ export class EthereumBSCRelay {
     }
   }
 
-  // Enhanced mint submission with return value
+  // Enhanced mint submission with header, proof, and logIndex
   private async submitMintToBSCWithReturn(lockData: LockEventData, proof: string): Promise<string> {
-    console.log(`Submitting mint transaction to BSC...`);
+    console.log(`Submitting mint transaction to BSC with receipt proof...`);
 
-    const gasEstimate = await this.bscBridge.mint.estimateGas(
-      lockData.token,
-      lockData.targetAddr,
-      lockData.amount,
-      lockData.nonce,
-      proof
+    // Generate receipt proof for the transaction
+    const receiptProof = await this.generateReceiptProof(lockData.transactionHash);
+
+    // Enhanced mint payload with header, proof, and logIndex
+    const mintPayload = {
+      token: lockData.token,
+      recipient: lockData.targetAddr,
+      amount: lockData.amount,
+      nonce: lockData.nonce,
+      blockHeader: receiptProof.blockHeader,
+      receiptProof: receiptProof.proof,
+      receipt: receiptProof.receipt,
+      logIndex: lockData.logIndex
+    };
+
+    // Call enhanced mint function with receipt verification
+    const gasEstimate = await this.bscBridge.mintWithProof.estimateGas(
+      mintPayload.token,
+      mintPayload.recipient,
+      mintPayload.amount,
+      mintPayload.nonce,
+      mintPayload.blockHeader,
+      mintPayload.receiptProof,
+      mintPayload.receipt,
+      mintPayload.logIndex
     );
 
     const gasLimit = (gasEstimate * BigInt(125)) / BigInt(100);
     const feeData = await this.bscProvider.getFeeData();
 
-    const mintTx = await this.bscBridge.mint(
-      lockData.token,
-      lockData.targetAddr,
-      lockData.amount,
-      lockData.nonce,
-      proof,
+    const mintTx = await this.bscBridge.mintWithProof(
+      mintPayload.token,
+      mintPayload.recipient,
+      mintPayload.amount,
+      mintPayload.nonce,
+      mintPayload.blockHeader,
+      mintPayload.receiptProof,
+      mintPayload.receipt,
+      mintPayload.logIndex,
       { 
         gasLimit,
         gasPrice: feeData.gasPrice 
       }
     );
 
-    console.log(`🚀 Mint transaction submitted: ${mintTx.hash}`);
+    console.log(`Mint transaction with proof submitted: ${mintTx.hash}`);
 
     const receipt = await Promise.race([
       mintTx.wait(),
@@ -571,7 +593,7 @@ export class EthereumBSCRelay {
     ]) as any;
 
     if (receipt?.status === 1) {
-      console.log(`✅ Mint confirmed on BSC: ${mintTx.hash}`);
+      console.log(`Mint with proof confirmed on BSC: ${mintTx.hash}`);
       return mintTx.hash;
     } else {
       throw new Error("Mint transaction failed or reverted");
