@@ -363,16 +363,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Prometheus metrics endpoint
   app.get("/metrics", async (req, res) => {
     try {
-      const { relayPersistence } = await import('./persistence');
-      const stats = relayPersistence.getStats();
+      // Initialize basic metrics with safe defaults
+      let stats = { total: 0, pending: 0, confirmed: 0, processed: 0, failed: 0, lastProcessedBlock: 0 };
+      let relayStatus = { isRunning: false, processedEvents: 0, ethereumBlock: 0, bscBlock: 0 };
+
+      // Try to get persistence stats
+      try {
+        const { relayPersistence } = await import('./persistence');
+        stats = relayPersistence.getStats();
+      } catch (persistError: any) {
+        console.log('Persistence not available for metrics:', persistError?.message || 'Unknown error');
+      }
       
-      // Get relay status if available
-      let relayStatus;
+      // Try to get relay status
       try {
         const { ethereumBSCRelay } = await import('./eth-bsc-relay');
         relayStatus = await ethereumBSCRelay.getRelayStatus();
-      } catch {
-        relayStatus = { isRunning: false, processedEvents: 0, ethereumBlock: 0, bscBlock: 0 };
+      } catch (relayError: any) {
+        console.log('Relay not available for metrics:', relayError?.message || 'Unknown error');
       }
 
       const metrics = `# HELP bridge_events_total Total number of bridge events by status
@@ -388,11 +396,11 @@ bridge_relay_running ${relayStatus.isRunning ? 1 : 0}
 
 # HELP bridge_ethereum_block_height Latest Ethereum block height
 # TYPE bridge_ethereum_block_height gauge
-bridge_ethereum_block_height ${relayStatus.ethereumBlock}
+bridge_ethereum_block_height ${relayStatus.ethereumBlock || 0}
 
 # HELP bridge_bsc_block_height Latest BSC block height
 # TYPE bridge_bsc_block_height gauge
-bridge_bsc_block_height ${relayStatus.bscBlock}
+bridge_bsc_block_height ${relayStatus.bscBlock || 0}
 
 # HELP bridge_last_processed_block Last fully processed Ethereum block
 # TYPE bridge_last_processed_block gauge
@@ -401,13 +409,30 @@ bridge_last_processed_block ${stats.lastProcessedBlock}
 # HELP bridge_total_events Total events in database
 # TYPE bridge_total_events gauge
 bridge_total_events ${stats.total}
+
+# HELP bridge_system_status System status indicator
+# TYPE bridge_system_status gauge
+bridge_system_status 1
 `;
 
       res.set('Content-Type', 'text/plain');
       res.send(metrics);
     } catch (error) {
-      console.error('Metrics error:', error);
-      res.status(500).send('# Error generating metrics\n');
+      console.error('Metrics endpoint error:', error);
+      // Return basic metrics even on error
+      const fallbackMetrics = `# HELP bridge_system_status System status indicator
+# TYPE bridge_system_status gauge
+bridge_system_status 0
+
+# HELP bridge_events_total Total number of bridge events by status
+# TYPE bridge_events_total counter
+bridge_events_total{status="pending"} 0
+bridge_events_total{status="confirmed"} 0
+bridge_events_total{status="processed"} 0
+bridge_events_total{status="failed"} 0
+`;
+      res.set('Content-Type', 'text/plain');
+      res.send(fallbackMetrics);
     }
   });
 

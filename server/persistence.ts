@@ -196,21 +196,51 @@ export class RelayPersistence {
     failed: number;
     lastProcessedBlock: number;
   } {
-    const totalStmt = this.db.prepare('SELECT COUNT(*) as count FROM processed_events');
-    const pendingStmt = this.db.prepare('SELECT COUNT(*) as count FROM processed_events WHERE status = "pending"');
-    const confirmedStmt = this.db.prepare('SELECT COUNT(*) as count FROM processed_events WHERE status = "confirmed"');
-    const processedStmt = this.db.prepare('SELECT COUNT(*) as count FROM processed_events WHERE status = "processed"');
-    const failedStmt = this.db.prepare('SELECT COUNT(*) as count FROM processed_events WHERE status = "failed"');
-    const lastBlockStmt = this.db.prepare('SELECT MAX(block_number) as block FROM processed_events WHERE status = "processed"');
+    try {
+      // Check if table exists first
+      const tableExists = this.db.prepare(`
+        SELECT name FROM sqlite_master 
+        WHERE type='table' AND name='processed_events'
+      `).get();
 
-    return {
-      total: (totalStmt.get() as { count: number }).count,
-      pending: (pendingStmt.get() as { count: number }).count,
-      confirmed: (confirmedStmt.get() as { count: number }).count,
-      processed: (processedStmt.get() as { count: number }).count,
-      failed: (failedStmt.get() as { count: number }).count,
-      lastProcessedBlock: (lastBlockStmt.get() as { block: number | null }).block || 0
-    };
+      if (!tableExists) {
+        console.log('processed_events table does not exist yet, returning zero stats');
+        return {
+          total: 0,
+          pending: 0,
+          confirmed: 0,
+          processed: 0,
+          failed: 0,
+          lastProcessedBlock: 0
+        };
+      }
+
+      const totalStmt = this.db.prepare('SELECT COUNT(*) as count FROM processed_events');
+      const pendingStmt = this.db.prepare("SELECT COUNT(*) as count FROM processed_events WHERE status = 'pending'");
+      const confirmedStmt = this.db.prepare("SELECT COUNT(*) as count FROM processed_events WHERE status = 'confirmed'");
+      const processedStmt = this.db.prepare("SELECT COUNT(*) as count FROM processed_events WHERE status = 'processed'");
+      const failedStmt = this.db.prepare("SELECT COUNT(*) as count FROM processed_events WHERE status = 'failed'");
+      const lastBlockStmt = this.db.prepare("SELECT MAX(block_number) as block FROM processed_events WHERE status = 'processed'");
+
+      return {
+        total: (totalStmt.get() as { count: number }).count,
+        pending: (pendingStmt.get() as { count: number }).count,
+        confirmed: (confirmedStmt.get() as { count: number }).count,
+        processed: (processedStmt.get() as { count: number }).count,
+        failed: (failedStmt.get() as { count: number }).count,
+        lastProcessedBlock: (lastBlockStmt.get() as { block: number | null }).block || 0
+      };
+    } catch (error) {
+      console.error('Error getting database stats:', error);
+      return {
+        total: 0,
+        pending: 0,
+        confirmed: 0,
+        processed: 0,
+        failed: 0,
+        lastProcessedBlock: 0
+      };
+    }
   }
 
   // Store relay configuration
