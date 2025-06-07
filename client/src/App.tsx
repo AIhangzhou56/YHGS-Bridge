@@ -15,6 +15,7 @@ function Router() {
       <Route path="/bridge" component={Bridge} />
       <Route path="/testnet" component={Testnet} />
       <Route path="/mirror" component={Mirror} />
+      <Route path="/relay" component={Relay} />
       <Route component={NotFound} />
     </Switch>
   );
