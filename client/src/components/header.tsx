@@ -28,9 +28,9 @@ export function Header() {
               </div>
               <nav className="hidden md:flex space-x-6">
                 <a href="/bridge" className="text-blue-400 font-medium">Bridge</a>
+                <a href="/mirror" className="text-slate-400 hover:text-slate-200 transition-colors">Mirror</a>
                 <a href="/testnet" className="text-slate-400 hover:text-slate-200 transition-colors">Testnet</a>
                 <a href="#" className="text-slate-400 hover:text-slate-200 transition-colors">Portfolio</a>
-                <a href="#" className="text-slate-400 hover:text-slate-200 transition-colors">History</a>
               </nav>
             </div>
             

@@ -220,6 +220,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     await handleTestnetBridge(req, res);
   });
 
+  // BSC Mirror Bridge endpoints
+  app.post("/api/bridge/lock-erc20", async (req, res) => {
+    try {
+      const { tokenAddress, amount, userAddress } = req.body;
+      
+      if (!tokenAddress || !amount || !userAddress) {
+        return res.status(400).json({ error: "Missing required parameters" });
+      }
+
+      const { bscMirrorBridge } = await import('./bsc-mirror-bridge');
+      
+      // Get mirror token info
+      const mirrorInfo = await bscMirrorBridge.getMirrorTokenInfo(tokenAddress);
+      
+      // Estimate fees
+      const fees = await bscMirrorBridge.estimateBridgeFee(tokenAddress, amount);
+      
+      res.json({
+        success: true,
+        mirrorToken: mirrorInfo,
+        fees,
+        message: "Ready to lock ERC-20 and mint mirror token on BSC"
+      });
+    } catch (error) {
+      console.error('Lock ERC-20 error:', error);
+      res.status(500).json({ error: "Failed to process lock request" });
+    }
+  });
+
+  app.get("/api/bridge/mirror-token/:originalToken", async (req, res) => {
+    try {
+      const { originalToken } = req.params;
+      const { bscMirrorBridge } = await import('./bsc-mirror-bridge');
+      
+      const mirrorInfo = await bscMirrorBridge.getMirrorTokenInfo(originalToken);
+      
+      if (!mirrorInfo) {
+        return res.status(404).json({ error: "Mirror token not found" });
+      }
+      
+      res.json({ mirrorToken: mirrorInfo });
+    } catch (error) {
+      console.error('Get mirror token error:', error);
+      res.status(500).json({ error: "Failed to get mirror token info" });
+    }
+  });
+
+  app.post("/api/bridge/estimate-mirror-fee", async (req, res) => {
+    try {
+      const { tokenAddress, amount } = req.body;
+      const { bscMirrorBridge } = await import('./bsc-mirror-bridge');
+      
+      const fees = await bscMirrorBridge.estimateBridgeFee(tokenAddress, amount);
+      res.json({ fees });
+    } catch (error) {
+      console.error('Estimate fee error:', error);
+      res.status(500).json({ error: "Failed to estimate fees" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

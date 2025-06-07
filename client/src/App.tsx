@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import Bridge from "@/pages/bridge";
 import Testnet from "@/pages/testnet";
+import Mirror from "@/pages/mirror";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -12,6 +13,7 @@ function Router() {
       <Route path="/" component={Bridge} />
       <Route path="/bridge" component={Bridge} />
       <Route path="/testnet" component={Testnet} />
+      <Route path="/mirror" component={Mirror} />
       <Route component={NotFound} />
     </Switch>
   );
