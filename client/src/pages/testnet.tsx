@@ -1,4 +1,4 @@
-import { TestnetBridge } from '@/components/testnet-bridge';
+import { SimpleTestnet } from '@/components/simple-testnet';
 
 export default function Testnet() {
   return (
@@ -10,7 +10,7 @@ export default function Testnet() {
             Test ETH ↔ SOL bridge functionality with live transaction monitoring
           </p>
         </div>
-        <TestnetBridge />
+        <SimpleTestnet />
       </div>
     </div>
   );

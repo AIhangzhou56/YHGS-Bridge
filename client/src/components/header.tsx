@@ -27,8 +27,8 @@ export function Header() {
                 </span>
               </div>
               <nav className="hidden md:flex space-x-6">
-                <a href="#" className="text-blue-400 font-medium">BringToFront</a>
-                <a href="#" className="text-slate-400 hover:text-slate-200 transition-colors">Swap</a>
+                <a href="/bridge" className="text-blue-400 font-medium">Bridge</a>
+                <a href="/testnet" className="text-slate-400 hover:text-slate-200 transition-colors">Testnet</a>
                 <a href="#" className="text-slate-400 hover:text-slate-200 transition-colors">Portfolio</a>
                 <a href="#" className="text-slate-400 hover:text-slate-200 transition-colors">History</a>
               </nav>
