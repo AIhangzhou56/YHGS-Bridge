@@ -1,0 +1,60 @@
+{
+  "dashboard": {
+    "title": "YHGS Bridge Alerts v1.1",
+    "tags": ["bridge", "alerts", "monitoring"],
+    "timezone": "utc",
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  },
+  "rules": [
+    {
+      "uid": "bridge_reorg_critical",
+      "title": "Bridge Reorg Detected - CRITICAL",
+      "condition": "A",
+      "data": [
+        {
+          "refId": "A",
+          "model": {
+            "expr": "increase(bridge_reorg_events_total[5m]) > 0"
+          }
+        }
+      ],
+      "noDataState": "NoData",
+      "execErrState": "Alerting",
+      "for": "0m",
+      "annotations": {
+        "summary": "Bridge reorganization detected - CRITICAL",
+        "description": "Chain reorganization detected (bridge_reorg_total > 0). Immediate investigation required."
+      },
+      "labels": {
+        "severity": "critical"
+      }
+    },
+    {
+      "uid": "bridge_latency_warning",
+      "title": "Bridge Latency Warning",
+      "condition": "A", 
+      "data": [
+        {
+          "refId": "A",
+          "model": {
+            "expr": "bridge_relay_latency_p95_ms > 10000"
+          }
+        }
+      ],
+      "noDataState": "NoData",
+      "execErrState": "NoData",
+      "for": "5m",
+      "annotations": {
+        "summary": "Bridge relay latency degraded",
+        "description": "95th percentile relay latency exceeds 10 seconds threshold."
+      },
+      "labels": {
+        "severity": "warning"
+      }
+    }
+  ]
+}
