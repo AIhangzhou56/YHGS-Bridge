@@ -56,6 +56,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Local development** environment with hot reloading
 - **Unit tests** with mocking for external dependencies
 
+## [1.1.0] - v1.1 Light-Client PoC
+
+### Added
+- **Receipt Verifier Smart Contract** with Merkle proof verification
+- **Light Client Header Store** for BSC block header validation
+- **generateReceiptProof()** function using eth_getProof + RLP encoding
+- **Adaptive Confirmation Depth** with per-chain configuration (CONFIRMATIONS_ETH/BSC)
+- **Enhanced Reorg Detection** with automatic event rollback mechanism
+- **Security Audit Pipeline** with Slither + Mythril integration
+- **Grafana Alert Rules** for failed events, reorgs, and latency monitoring
+- **SARIF Output** for GitHub Code Scanning integration
+
+### Core Features
+- **Smart Contract Verification** of transaction receipts using cryptographic proofs
+- **Light Client Architecture** with header storage and validation on BSC
+- **Automated Security Auditing** with CI/CD integration and severity thresholds
+- **Real-time Alerting** with critical, warning, and info level notifications
+- **Enhanced Monitoring** with P95 latency tracking and reorg event counters
+
+### Infrastructure
+- **docker-compose.test.yml** with security audit services
+- **Slither + Mythril** containerized security analysis
+- **Test Networks** with Ganache for local development
+- **Alert Dashboard** with automated notification system
+
 ## [Unreleased]
 
 ### Planned

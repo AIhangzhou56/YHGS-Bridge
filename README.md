@@ -250,7 +250,51 @@ cp .env .env.backup
 tar -czf monitoring-backup.tar.gz monitoring/
 ```
 
+## 🔬 v1.1 Light-Client PoC
+
+### Smart Contract Verification
+The system includes cryptographic verification of Ethereum transaction receipts:
+
+```solidity
+// ReceiptVerifier.sol - Verifies tx receipts using Merkle proofs
+function verifyReceipt(ReceiptProof memory _proof) public view returns (bool)
+
+// Light client header store for block validation
+function storeHeader(bytes32 _blockHash, bytes32 _receiptsRoot, uint256 _blockNumber)
+```
+
+### Enhanced Security Features
+- **Adaptive Confirmation Depth**: Configure `CONFIRMATIONS_ETH=12` and `CONFIRMATIONS_BSC=6`
+- **Reorg Detection**: Automatic rollback of events affected by chain reorganizations
+- **Receipt Proof Generation**: `generateReceiptProof(txHash)` using eth_getProof + RLP
+- **Merkle Verification**: Cryptographic proof validation on destination chain
+
+### Security Audit Pipeline
+```bash
+# Run security audits with Slither + Mythril
+docker compose -f docker-compose.test.yml up slither mythril
+
+# Generate SARIF reports for GitHub Code Scanning
+# Reports saved to audit-reports/ directory
+```
+
+### Grafana Alerting
+Pre-configured alerts for production monitoring:
+- **Critical**: `failed_events_total > 0` (immediate notification)
+- **Warning**: `reorg_events_total > 0` (chain reorganization detected)
+- **Warning**: `relay_latency_p95_ms > 10000` (performance degradation)
+
 ## 📝 Changelog
+
+### v1.1.0 - Light-Client PoC
+- ✅ Receipt Verifier smart contract with Merkle proof verification
+- ✅ Light client header store for BSC block validation
+- ✅ generateReceiptProof() function using eth_getProof + RLP
+- ✅ Adaptive confirmation depth with per-chain configuration
+- ✅ Enhanced reorg detection with automatic event rollback
+- ✅ Security audit pipeline with Slither + Mythril integration
+- ✅ Grafana alert rules for comprehensive monitoring
+- ✅ SARIF output for GitHub Code Scanning
 
 ### v1.0.0 (2024-06-07)
 - ✅ Production-ready relay system with reorg safety
