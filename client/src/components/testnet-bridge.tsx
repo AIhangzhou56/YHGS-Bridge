@@ -4,11 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest } from '@/lib/queryClient';
 import { Clock, ExternalLink, Copy, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 interface TestTransaction {
@@ -57,8 +54,9 @@ export function TestnetBridge() {
   useEffect(() => {
     const loadConfig = async () => {
       try {
-        const response = await apiRequest({ url: '/api/testnet/config' });
-        setConfig(response.config);
+        const response = await fetch('/api/testnet/config');
+        const data = await response.json();
+        setConfig(data.config);
       } catch (error) {
         toast({
           title: "Configuration Error",
@@ -74,15 +72,16 @@ export function TestnetBridge() {
   useEffect(() => {
     const pollTransactions = async () => {
       try {
-        const response = await apiRequest({ url: '/api/testnet/status' });
-        setTransactions(response.transactions || []);
+        const response = await fetch('/api/testnet/status');
+        const data = await response.json();
+        setTransactions(data.transactions || []);
       } catch (error) {
         console.error('Failed to poll transactions:', error);
       }
     };
 
-    const interval = setInterval(pollTransactions, 2000); // Poll every 2 seconds
-    pollTransactions(); // Initial load
+    const interval = setInterval(pollTransactions, 2000);
+    pollTransactions();
 
     return () => clearInterval(interval);
   }, []);
@@ -108,20 +107,24 @@ export function TestnetBridge() {
         ? 'EthSoLBridgeTest1111111111111111111111111111'
         : '0x742d35Cc6634C0532925a3b8D35Cc6634C0532925';
 
-      const response = await apiRequest({
-        url: `/api/testnet/${endpoint}`,
+      const response = await fetch(`/api/testnet/${endpoint}`, {
         method: 'POST',
-        body: {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           amount,
           token,
           fromAddress,
           toAddress
-        }
+        })
       });
+
+      const data = await response.json();
 
       toast({
         title: "Bridge Test Initiated",
-        description: response.message || "Test transaction started successfully"
+        description: data.message || "Test transaction started successfully"
       });
 
       setAmount('');

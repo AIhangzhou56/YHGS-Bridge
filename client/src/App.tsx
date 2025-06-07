@@ -2,8 +2,8 @@ import { Switch, Route } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import Bridge from "@/pages/bridge";
+import Testnet from "@/pages/testnet";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -11,6 +11,7 @@ function Router() {
     <Switch>
       <Route path="/" component={Bridge} />
       <Route path="/bridge" component={Bridge} />
+      <Route path="/testnet" component={Testnet} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -19,10 +20,8 @@ function Router() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Router />
-      </TooltipProvider>
+      <Toaster />
+      <Router />
     </QueryClientProvider>
   );
 }
