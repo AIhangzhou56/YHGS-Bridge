@@ -450,6 +450,61 @@ bridge_events_total{status="failed"} 0
     }
   });
 
+  // Real-time cryptocurrency price endpoints
+  app.get("/api/prices/live", async (req, res) => {
+    try {
+      await priceService.updateAllPrices();
+      const tokens = await storage.getAllTokens();
+      res.json({ 
+        success: true, 
+        tokens: tokens.map(token => ({
+          symbol: token.symbol,
+          name: token.name,
+          price: token.price,
+          change24h: token.change24h
+        }))
+      });
+    } catch (error) {
+      console.error('Live prices error:', error);
+      res.status(500).json({ error: "Failed to fetch live prices" });
+    }
+  });
+
+  app.get("/api/prices/:symbol", async (req, res) => {
+    try {
+      const { symbol } = req.params;
+      const priceData = await priceService.getTokenPrice(symbol);
+      
+      if (!priceData) {
+        return res.status(404).json({ error: "Token not found" });
+      }
+      
+      res.json({ 
+        symbol: symbol.toUpperCase(),
+        price: priceData.price,
+        change24h: priceData.change24h
+      });
+    } catch (error) {
+      console.error('Token price error:', error);
+      res.status(500).json({ error: "Failed to fetch token price" });
+    }
+  });
+
+  app.get("/api/market/summary", async (req, res) => {
+    try {
+      const summary = await priceService.getMarketSummary();
+      
+      if (!summary) {
+        return res.status(503).json({ error: "Market data unavailable" });
+      }
+      
+      res.json({ success: true, market: summary });
+    } catch (error) {
+      console.error('Market summary error:', error);
+      res.status(500).json({ error: "Failed to fetch market summary" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
