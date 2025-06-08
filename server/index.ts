@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { priceService } from "./price-service";
 
 const app = express();
 app.use(express.json());
@@ -64,7 +65,20 @@ app.use((req, res, next) => {
     port,
     host: "0.0.0.0",
     reusePort: true,
-  }, () => {
+  }, async () => {
     log(`serving on port ${port}`);
+    
+    // Initialize real cryptocurrency price feeds
+    try {
+      const apiConnected = await priceService.validateApiConnection();
+      if (apiConnected) {
+        await priceService.startPriceUpdates();
+        log("Real-time cryptocurrency prices active");
+      } else {
+        log("Warning: CoinGecko API connection failed - using cached prices");
+      }
+    } catch (error) {
+      log(`Price service initialization failed: ${error}`);
+    }
   });
 })();
