@@ -74,51 +74,99 @@ export class MemStorage implements IStorage {
   }
 
   private initializeData() {
-    // Initialize mock tokens
-    const mockTokens: InsertToken[] = [
-      {
-        symbol: "ETH",
-        name: "Ethereum",
-        chain: "ethereum",
-        icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
-        price: "2645.67",
-        change24h: "-1.56"
-      },
+    // Initialize tokens with placeholders (prices updated by CoinGecko service)
+    const initialTokens: InsertToken[] = [
       {
         symbol: "BTC",
         name: "Bitcoin",
         chain: "bitcoin",
         icon: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
-        price: "42150.32",
-        change24h: "3.24"
+        price: "0.00",
+        change24h: "0.00"
       },
       {
-        symbol: "MATIC",
-        name: "Polygon",
-        chain: "polygon",
-        icon: "https://cryptologos.cc/logos/polygon-matic-logo.png",
-        price: "0.8456",
-        change24h: "5.12"
+        symbol: "ETH",
+        name: "Ethereum",
+        chain: "ethereum",
+        icon: "https://cryptologos.cc/logos/ethereum-eth-logo.png",
+        price: "0.00",
+        change24h: "0.00"
       },
       {
         symbol: "BNB",
         name: "Binance Coin",
         chain: "bsc",
         icon: "https://cryptologos.cc/logos/bnb-bnb-logo.png",
-        price: "312.45",
-        change24h: "2.89"
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "USDT",
+        name: "Tether",
+        chain: "ethereum",
+        icon: "https://cryptologos.cc/logos/tether-usdt-logo.png",
+        price: "0.00",
+        change24h: "0.00"
       },
       {
         symbol: "USDC",
         name: "USD Coin",
         chain: "ethereum",
         icon: "https://cryptologos.cc/logos/usd-coin-usdc-logo.png",
-        price: "1.0001",
-        change24h: "0.01"
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "DAI",
+        name: "Dai",
+        chain: "ethereum",
+        icon: "https://cryptologos.cc/logos/multi-collateral-dai-dai-logo.png",
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "WBTC",
+        name: "Wrapped Bitcoin",
+        chain: "ethereum",
+        icon: "https://cryptologos.cc/logos/wrapped-bitcoin-wbtc-logo.png",
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "UNI",
+        name: "Uniswap",
+        chain: "ethereum",
+        icon: "https://cryptologos.cc/logos/uniswap-uni-logo.png",
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "LINK",
+        name: "Chainlink",
+        chain: "ethereum",
+        icon: "https://cryptologos.cc/logos/chainlink-link-logo.png",
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "MATIC",
+        name: "Polygon",
+        chain: "polygon",
+        icon: "https://cryptologos.cc/logos/polygon-matic-logo.png",
+        price: "0.00",
+        change24h: "0.00"
+      },
+      {
+        symbol: "AVAX",
+        name: "Avalanche",
+        chain: "avalanche",
+        icon: "https://cryptologos.cc/logos/avalanche-avax-logo.png",
+        price: "0.00",
+        change24h: "0.00"
       }
     ];
 
-    mockTokens.forEach(token => {
+    initialTokens.forEach(token => {
       const id = this.currentId++;
       this.tokens.set(id, { ...token, id });
     });

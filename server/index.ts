@@ -72,6 +72,8 @@ app.use((req, res, next) => {
     try {
       const apiConnected = await priceService.validateApiConnection();
       if (apiConnected) {
+        // Force immediate price update to replace placeholder values
+        await priceService.updateAllPrices();
         await priceService.startPriceUpdates();
         log("Real-time cryptocurrency prices active");
       } else {

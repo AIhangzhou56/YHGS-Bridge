@@ -22,6 +22,7 @@ export class PriceService {
   private updateTimer: NodeJS.Timeout | null = null;
 
   private readonly TOKEN_MAPPINGS: TokenMapping[] = [
+    { symbol: 'BTC', coinGeckoId: 'bitcoin' },
     { symbol: 'ETH', coinGeckoId: 'ethereum' },
     { symbol: 'BNB', coinGeckoId: 'binancecoin' },
     { symbol: 'USDT', coinGeckoId: 'tether' },
