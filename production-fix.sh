@@ -1,15 +1,15 @@
 #!/bin/bash
 
-# Production Fix for React Router Routes
+# Production Fix for React Router Routes - CentOS Version
 # This fixes the blank page issue on /mirror, /relay, /testnet routes
 
-echo "🔧 Fixing React Router in Production..."
+echo "🔧 Fixing React Router in Production on CentOS..."
 
 APP_DIR="/var/www/yhgs-bridge"
 cd $APP_DIR
 
-# Update Nginx configuration to properly handle React routes
-cat > /etc/nginx/sites-available/yhgs-bridge << 'EOF'
+# Update Nginx configuration for CentOS (uses conf.d directory)
+cat > /etc/nginx/conf.d/yhgs-bridge.conf << 'EOF'
 server {
     listen 80;
     server_name your-domain.com www.your-domain.com;

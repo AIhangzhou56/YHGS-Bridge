@@ -1,12 +1,12 @@
 #!/bin/bash
 
-# Quick Fix for React Router Routes in Production
-# Run this on your server to fix the blank page issue
+# Quick Fix for React Router Routes in Production - CentOS Version
+# Run this on your CentOS server to fix the blank page issue
 
-echo "Fixing React Router routes..."
+echo "Fixing React Router routes on CentOS..."
 
-# Update your current Nginx configuration
-sudo tee /etc/nginx/sites-available/yhgs-bridge > /dev/null << 'EOF'
+# Update Nginx configuration for CentOS (uses conf.d instead of sites-available)
+sudo tee /etc/nginx/conf.d/yhgs-bridge.conf > /dev/null << 'EOF'
 server {
     listen 80;
     server_name yhgs.chat www.yhgs.chat;
@@ -40,10 +40,17 @@ server {
 }
 EOF
 
+# Remove default Nginx configuration if it exists
+sudo rm -f /etc/nginx/conf.d/default.conf
+
 # Test and reload Nginx
 sudo nginx -t && sudo systemctl reload nginx
 
-# Restart your Node.js application
-sudo pm2 restart yhgs-bridge
+# Restart your Node.js application (using systemctl for CentOS)
+sudo systemctl restart yhgs-bridge
 
-echo "Fix applied. Your /mirror route should now work."
+# If using PM2, also restart that
+sudo pm2 restart yhgs-bridge 2>/dev/null || true
+
+echo "Fix applied for CentOS. Your /mirror route should now work."
+echo "Check status with: sudo systemctl status yhgs-bridge"
