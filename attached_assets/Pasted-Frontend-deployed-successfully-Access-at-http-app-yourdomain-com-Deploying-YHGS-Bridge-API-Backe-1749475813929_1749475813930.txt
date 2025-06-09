@@ -1,0 +1,88 @@
+Frontend deployed successfully!
+Access at: http://app.yourdomain.com
+Deploying YHGS Bridge API Backend...
+npm warn config production Use `--omit=dev` instead.
+npm warn deprecated rimraf@3.0.2: Rimraf versions prior to v4 are no longer supported
+npm warn deprecated npmlog@6.0.2: This package is no longer supported.
+npm warn deprecated inflight@1.0.6: This module is not supported, and leaks memory. Do not use it. Check out lru-cache if you want a good and tested way to coalesce async requests by a key value, which is much more comprehensive and powerful.
+npm warn deprecated are-we-there-yet@3.0.1: This package is no longer supported.
+npm warn deprecated gauge@4.0.4: This package is no longer supported.
+npm warn deprecated @npmcli/move-file@1.1.2: This functionality has been moved to @npmcli/fs
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm warn deprecated glob@7.2.3: Glob versions prior to v9 are no longer supported
+npm error code 1
+npm error path /var/www/yhgs-api/node_modules/better-sqlite3
+npm error command failed
+npm error command sh -c prebuild-install || node-gyp rebuild --release
+npm error make: 进入目录“/var/www/yhgs-api/node_modules/better-sqlite3/build”
+npm error   TOUCH ba23eeee118cd63e16015df367567cb043fed872.intermediate
+npm error   ACTION deps_sqlite3_gyp_locate_sqlite3_target_copy_builtin_sqlite3 ba23eeee118cd63e16015df367567cb043fed872.intermediate
+npm error   TOUCH Release/obj.target/deps/locate_sqlite3.stamp
+npm error   CC(target) Release/obj.target/sqlite3/gen/sqlite3/sqlite3.o
+npm error   AR(target) Release/obj.target/deps/sqlite3.a
+npm error   COPY Release/sqlite3.a
+npm error   CXX(target) Release/obj.target/better_sqlite3/src/better_sqlite3.o
+npm error rm ba23eeee118cd63e16015df367567cb043fed872.intermediate
+npm error make: 离开目录“/var/www/yhgs-api/node_modules/better-sqlite3/build”
+npm error prebuild-install warn install /lib64/libm.so.6: version `GLIBC_2.29' not found (required by /var/www/yhgs-api/node_modules/better-sqlite3/build/Release/better_sqlite3.node)
+npm error gyp info it worked if it ends with ok
+npm error gyp info using node-gyp@8.4.1
+npm error gyp info using node@20.19.2 | linux | x64
+npm error gyp info find Python using Python version 3.6.8 found at "/usr/bin/python3"
+npm error gyp http GET https://nodejs.org/download/release/v20.19.2/node-v20.19.2-headers.tar.gz
+npm error gyp http 200 https://nodejs.org/download/release/v20.19.2/node-v20.19.2-headers.tar.gz
+npm error gyp http GET https://nodejs.org/download/release/v20.19.2/SHASUMS256.txt
+npm error gyp http 200 https://nodejs.org/download/release/v20.19.2/SHASUMS256.txt
+npm error gyp info spawn /usr/bin/python3
+npm error gyp info spawn args [
+npm error gyp info spawn args   '/var/www/yhgs-api/node_modules/node-gyp/gyp/gyp_main.py',
+npm error gyp info spawn args   'binding.gyp',
+npm error gyp info spawn args   '-f',
+npm error gyp info spawn args   'make',
+npm error gyp info spawn args   '-I',
+npm error gyp info spawn args   '/var/www/yhgs-api/node_modules/better-sqlite3/build/config.gypi',
+npm error gyp info spawn args   '-I',
+npm error gyp info spawn args   '/var/www/yhgs-api/node_modules/node-gyp/addon.gypi',
+npm error gyp info spawn args   '-I',
+npm error gyp info spawn args   '/home/yhgs/.cache/node-gyp/20.19.2/include/node/common.gypi',
+npm error gyp info spawn args   '-Dlibrary=shared_library',
+npm error gyp info spawn args   '-Dvisibility=default',
+npm error gyp info spawn args   '-Dnode_root_dir=/home/yhgs/.cache/node-gyp/20.19.2',
+npm error gyp info spawn args   '-Dnode_gyp_dir=/var/www/yhgs-api/node_modules/node-gyp',
+npm error gyp info spawn args   '-Dnode_lib_file=/home/yhgs/.cache/node-gyp/20.19.2/<(target_arch)/node.lib',
+npm error gyp info spawn args   '-Dmodule_root_dir=/var/www/yhgs-api/node_modules/better-sqlite3',
+npm error gyp info spawn args   '-Dnode_engine=v8',
+npm error gyp info spawn args   '--depth=.',
+npm error gyp info spawn args   '--no-parallel',
+npm error gyp info spawn args   '--generator-output',
+npm error gyp info spawn args   'build',
+npm error gyp info spawn args   '-Goutput_dir=.'
+npm error gyp info spawn args ]
+npm error gyp info spawn make
+npm error gyp info spawn args [ 'BUILDTYPE=Release', '-C', 'build' ]
+npm error g++: 错误：unrecognized command line option ‘-std=c++20’; did you mean ‘-std=c++2a’?
+npm error make: *** [better_sqlite3.target.mk:116：Release/obj.target/better_sqlite3/src/better_sqlite3.o] 错误 1
+npm error gyp ERR! build error 
+npm error gyp ERR! stack Error: `make` failed with exit code: 2
+npm error gyp ERR! stack     at ChildProcess.onExit (/var/www/yhgs-api/node_modules/node-gyp/lib/build.js:194:23)
+npm error gyp ERR! stack     at ChildProcess.emit (node:events:524:28)
+npm error gyp ERR! stack     at ChildProcess._handle.onexit (node:internal/child_process:293:12)
+npm error gyp ERR! System Linux 5.15.0-139-generic
+npm error gyp ERR! command "/usr/bin/node" "/var/www/yhgs-api/node_modules/.bin/node-gyp" "rebuild" "--release"
+npm error gyp ERR! cwd /var/www/yhgs-api/node_modules/better-sqlite3
+npm error gyp ERR! node -v v20.19.2
+npm error gyp ERR! node-gyp -v v8.4.1
+npm error gyp ERR! not ok
+npm error A complete log of this run can be found in: /home/yhgs/.npm/_logs/2025-06-09T11_46_55_223Z-debug-0.log
+cp: 无法获取'nginx-api.conf' 的文件状态(stat): No such file or directory
+nginx: [warn] conflicting server name "yhgs.chat" on 0.0.0.0:80, ignored
+nginx: [warn] conflicting server name "www.yhgs.chat" on 0.0.0.0:80, ignored
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+API backend deployed successfully!
+Access at: http://api.yourdomain.com
+Complete deployment finished!
+Frontend: http://app.yhgs.chat
+API: http://api.yhgs.chat
+Don't forget to set up SSL certificates!
