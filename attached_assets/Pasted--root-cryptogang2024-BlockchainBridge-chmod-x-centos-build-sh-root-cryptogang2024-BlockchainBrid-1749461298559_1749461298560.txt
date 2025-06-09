@@ -1,0 +1,103 @@
+[root@cryptogang2024 BlockchainBridge]# chmod +x centos-build.sh
+[root@cryptogang2024 BlockchainBridge]# ./centos-build.sh
+Building YHGS Bridge for CentOS deployment...
+Building frontend...
+
+> rest-express@1.0.0 build
+> vite build && esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=dist
+
+sh: vite: 未找到命令
+Preparing static frontend...
+Preparing API backend...
+Build completed successfully!
+
+Static frontend: ./static-frontend/
+API backend: ./api-backend/
+
+Next step: Run ./yhgs-deployment.sh as root on your CentOS server
+[root@cryptogang2024 BlockchainBridge]# # 2. Make deployment script executable  
+[root@cryptogang2024 BlockchainBridge]# chmod +x yhgs-deployment.sh
+[root@cryptogang2024 BlockchainBridge]# # 3. Deploy on CentOS server (run as root)
+[root@cryptogang2024 BlockchainBridge]# ./yhgs-deployment.sh
+Deploying YHGS Bridge to yhgs.chat...
+npm warn config production Use `--omit=dev` instead.
+npm error code ERESOLVE
+npm error ERESOLVE could not resolve
+npm error
+npm error While resolving: yhgs-api@1.0.0
+npm error Found: drizzle-orm@0.39.1
+npm error node_modules/drizzle-orm
+npm error   drizzle-orm@"^0.29.0" from the root project
+npm error   peer drizzle-orm@">=0.36.0" from drizzle-zod@0.7.0
+npm error   node_modules/drizzle-zod
+npm error     drizzle-zod@"^0.5.1" from the root project
+npm error
+npm error Could not resolve dependency:
+npm error drizzle-orm@"^0.29.0" from the root project
+npm error
+npm error Conflicting peer dependency: react@19.1.0
+npm error node_modules/react
+npm error   peer react@"^19.0.0" from react-native@0.79.3
+npm error   node_modules/react-native
+npm error     peer react-native@"*" from expo-sqlite@15.2.12
+npm error     node_modules/expo-sqlite
+npm error       peerOptional expo-sqlite@">=13.2.0" from drizzle-orm@0.29.5
+npm error       node_modules/drizzle-orm
+npm error         drizzle-orm@"^0.29.0" from the root project
+npm error     peer react-native@"*" from expo@53.0.11
+npm error     node_modules/expo
+npm error       peer expo@"*" from expo-sqlite@15.2.12
+npm error       node_modules/expo-sqlite
+npm error         peerOptional expo-sqlite@">=13.2.0" from drizzle-orm@0.29.5
+npm error         node_modules/drizzle-orm
+npm error       1 more (@expo/dom-webview)
+npm error     3 more (@expo/dom-webview, @expo/metro-runtime, react-native-webview)
+npm error
+npm error Fix the upstream dependency conflict, or retry
+npm error this command with --force or --legacy-peer-deps
+npm error to accept an incorrect (and potentially broken) dependency resolution.
+npm error
+npm error
+npm error For a full report see:
+npm error /home/yhgs/.npm/_logs/2025-06-09T09_26_57_546Z-eresolve-report.txt
+npm error A complete log of this run can be found in: /home/yhgs/.npm/_logs/2025-06-09T09_26_57_546Z-debug-0.log
+./yhgs-deployment.sh:行27: sudo: 未找到命令
+cp: 无法获取'nginx-frontend.conf' 的文件状态(stat): No such file or directory
+cp: 无法获取'nginx-api.conf' 的文件状态(stat): No such file or directory
+Warning: ALREADY_ENABLED: http
+success
+Warning: ALREADY_ENABLED: https
+success
+success
+Job for yhgs-api.service failed because of unavailable resources or another system error.
+See "systemctl status yhgs-api.service" and "journalctl -xe" for details.
+nginx: [emerg] "limit_req_zone" directive is not allowed here in /etc/nginx/conf.d/yhgs-bridge.conf:19
+nginx: configuration file /etc/nginx/nginx.conf test failed
+Deployment completed!
+
+Services:
+Frontend: https://yhgs.chat
+API: https://app.yhgs.chat
+
+Status check:
+● yhgs-api.service - YHGS Bridge API
+   Loaded: loaded (/etc/systemd/system/yhgs-api.service; enabled; vendor preset: disabled)
+  Drop-In: /run/systemd/system/yhgs-api.service.d
+           └─zzz-lxc-service.conf
+   Active: activating (auto-restart) (Result: resources) since Mon 2025-06-09 12:27:16 EEST; 39ms ago
+
+Next steps:
+1. Configure DNS: yhgs.chat -> your server IP
+2. Configure DNS: app.yhgs.chat -> your server IP
+3. Install SSL: certbot --nginx -d yhgs.chat -d app.yhgs.chat
+4. Test API: curl https://app.yhgs.chat/api/tokens
+[root@cryptogang2024 BlockchainBridge]# curl https://app.yhgs.chat/api/tokens
+curl: (7) Failed to connect to app.yhgs.chat port 443: Connection refused
+[root@cryptogang2024 BlockchainBridge]# # Check service status
+[root@cryptogang2024 BlockchainBridge]# systemctl status yhgs-api
+● yhgs-api.service - YHGS Bridge API
+   Loaded: loaded (/etc/systemd/system/yhgs-api.service; enabled; vendor preset: disabled)
+  Drop-In: /run/systemd/system/yhgs-api.service.d
+           └─zzz-lxc-service.conf
+   Active: activating (auto-restart) (Result: resources) since Mon 2025-06-09 12:27:36 EEST; 5s ago
+[root@cryptogang2024 BlockchainBridge]# 
