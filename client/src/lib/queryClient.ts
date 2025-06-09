@@ -3,7 +3,7 @@ import { QueryClient, QueryFunction } from "@tanstack/react-query";
 // API endpoint configuration for static deployment
 const getApiBaseUrl = () => {
   if (import.meta.env.PROD) {
-    return 'https://api.yhgs.chat'; // Production API domain
+    return 'https://app.yhgs.chat'; // Production API domain
   }
   return ''; // Development uses same origin
 };
