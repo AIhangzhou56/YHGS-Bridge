@@ -1,0 +1,44 @@
+[root@cryptogang2024 BlockchainBridge]# chmod +x deploy-production.sh
+[root@cryptogang2024 BlockchainBridge]# ./deploy-production.sh
+Deploying YHGS Bridge to production...
+
+changed 13 packages in 49s
+
+5 packages are looking for funding
+  run `npm fund` for details
+Building frontend...
+failed to load config from /AI/BlockchainBridge/vite.config.ts
+error during build:
+Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'vite' imported from /AI/BlockchainBridge/vite.config.ts.timestamp-1749477663787-3a31efae8af3b.mjs
+    at packageResolve (node:internal/modules/esm/resolve:873:9)
+    at moduleResolve (node:internal/modules/esm/resolve:946:18)
+    at defaultResolve (node:internal/modules/esm/resolve:1188:11)
+    at ModuleLoader.defaultResolve (node:internal/modules/esm/loader:642:12)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:591:25)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:574:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:236:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:130:49)
+
+changed 1 package, and audited 74 packages in 3s
+
+14 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+Deployment successful!
+
+Services:
+Frontend: http://yhgs.chat
+API: http://app.yhgs.chat
+
+Testing API:
+{"tokens":[{"id":1,"symbol":"BTC","name":"Bitcoin","price":"105975.00","change24h":"+0.62%","iconUrl":"/icons/btc.svg"},{"id":2,"symbol":"ETH","name":"Ethereum","price":"2494.42","change24h":"-0.69%","iconUrl":"/icons/eth.svg"},{"id":3,"symbol":"BNB","name":"BNB","price":"650.72","change24h":"+0.32%","iconUrl":"/icons/bnb.svg"},{"id":4,"symbol":"USDC","name":"USD Coin","price":"1.00","change24h":"+0.00%","iconUrl":"/icons/usdc.svg"},{"id":5,"symbol":"MATIC","name":"Polygon","price":"0.21","change24h":"+0.26%","iconUrl":"/icons/matic.svg"},{"id":6,"symbol":"SOL","name":"Solana","price":"134.56","change24h":"+2.1%","iconUrl":"/icons/sol.svg"}]}
+
+Next steps:
+1. Configure DNS A records:
+   yhgs.chat -> YOUR_SERVER_IP
+   app.yhgs.chat -> YOUR_SERVER_IP
+2. Install SSL certificates:
+   certbot --nginx -d yhgs.chat -d app.yhgs.chat
