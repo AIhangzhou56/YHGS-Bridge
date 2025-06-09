@@ -1,3 +1,4 @@
+import { Navigation } from "@/components/navigation";
 import { Header } from "@/components/header";
 import { BridgeInterface } from "@/components/bridge-interface";
 import { ExchangeRates } from "@/components/exchange-rates";
@@ -7,6 +8,7 @@ import { TransactionHistory } from "@/components/transaction-history";
 export default function Bridge() {
   return (
     <div className="min-h-screen bg-slate-950">
+      <Navigation />
       <Header />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

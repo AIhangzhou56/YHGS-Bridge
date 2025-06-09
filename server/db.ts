@@ -1,10 +1,10 @@
 import { Pool, neonConfig } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from 'ws';
 import * as schema from "@shared/schema";
 
 // Fix WebSocket configuration for production deployment
 if (process.env.NODE_ENV !== 'production') {
-  const ws = require('ws');
   neonConfig.webSocketConstructor = ws;
 }
 
