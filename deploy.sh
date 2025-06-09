@@ -163,6 +163,26 @@ server {
     # Rate limiting
     limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
 
+    # API endpoints
+    location /api/ {
+        limit_req zone=api burst=20 nodelay;
+        proxy_pass http://localhost:5000;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+    }
+
+    # React app routes - all non-API requests
     location / {
         proxy_pass http://localhost:5000;
         proxy_http_version 1.1;
@@ -175,24 +195,19 @@ server {
         proxy_cache_bypass $http_upgrade;
         proxy_read_timeout 300s;
         proxy_connect_timeout 75s;
+        
+        # Handle React routing
+        proxy_intercept_errors on;
+        error_page 404 = @fallback;
     }
 
-    # API rate limiting
-    location /api/ {
-        limit_req zone=api burst=20 nodelay;
+    # Fallback for React router
+    location @fallback {
         proxy_pass http://localhost:5000;
-        proxy_http_version 1.1;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Static files caching
-    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg)$ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-        proxy_pass http://localhost:5000;
     }
 }
 EOF
