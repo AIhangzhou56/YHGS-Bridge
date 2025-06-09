@@ -32,7 +32,8 @@ cp .env.example api-backend/.env.production
 # Update API backend for production
 cd api-backend
 echo "Installing production dependencies..."
-npm install --production
+# Remove SQLite dependencies that cause build issues on CentOS
+npm install --production --omit=dev --ignore-scripts
 
 echo "Build completed!"
 echo ""

@@ -19,9 +19,18 @@ useradd -r yhgs 2>/dev/null || true
 cp -r api-backend/* /var/www/yhgs-api/
 chown -R yhgs:yhgs /var/www/yhgs-api
 
-# Install Node.js dependencies
+# Install Node.js dependencies (CentOS compatible)
 cd /var/www/yhgs-api
-su -c "npm install --production" yhgs
+su -c "npm install --production --omit=dev" yhgs
+
+# Create PostgreSQL database and user
+sudo -u postgres psql << 'EOSQL'
+CREATE DATABASE yhgs_bridge;
+CREATE USER yhgs_user WITH PASSWORD 'yhgs2024';
+GRANT ALL PRIVILEGES ON DATABASE yhgs_bridge TO yhgs_user;
+GRANT ALL ON SCHEMA public TO yhgs_user;
+\q
+EOSQL
 
 # Configure Nginx for yhgs.chat
 cp nginx-frontend.conf /etc/nginx/conf.d/yhgs-frontend.conf
